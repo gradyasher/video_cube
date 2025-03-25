@@ -1,0 +1,116 @@
+import React, { useRef, useEffect, useState } from "react";
+import * as THREE from "three";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+
+const videoSources = [
+  "/videos/clip 1.mp4",
+  "/videos/clip 2.mp4",
+  "/videos/clip 3.mp4",
+  "/videos/clip 4.mp4",
+  "/videos/clip 5.mp4",
+  "/videos/clip 6.mp4",
+  "/videos/clip 7.mp4",
+  "/videos/clip 8.mp4",
+];
+
+const VideoFace = ({ url, rotation, position }) => {
+  const [video] = useState(() => {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.crossOrigin = "Anonymous";
+    v.loop = true;
+    v.playsInline = true;
+    v.src = url;
+    return v;
+  });
+
+
+  const texture = new THREE.VideoTexture(video);
+  useEffect(() => {
+    const handlePlay = () => {
+      video.play().catch(err => {
+        console.warn("Autoplay blocked:", err);
+      });
+    };
+    video.addEventListener("loadedmetadata", handlePlay);
+    return () => video.removeEventListener("loadedmetadata", handlePlay);
+  }, [video]);
+
+
+
+  return (
+    <mesh rotation={rotation} position={position}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
+    </mesh>
+  );
+};
+
+const RotatingCube = () => {
+  const groupRef = useRef();
+  const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]);
+  const [nextIndex, setNextIndex] = useState(6);
+
+  useFrame(() => {
+    groupRef.current.rotation.y += 0.005;
+  });
+
+  // Optionally: Replace hidden faces logic here
+
+  const facePositions = [
+    [0, 0, 0.5],  // front
+    [0, 0, -0.5], // back
+    [0.5, 0, 0],  // right
+    [-0.5, 0, 0], // left
+    [0, 0.5, 0],  // top
+    [0, -0.5, 0], // bottom
+  ];
+
+  const faceRotations = [
+    [0, 0, 0],
+    [0, Math.PI, 0],
+    [0, Math.PI / 2, 0],
+    [0, -Math.PI / 2, 0],
+    [-Math.PI / 2, 0, 0],
+    [Math.PI / 2, 0, 0],
+  ];
+
+  return (
+    <group ref={groupRef}>
+      {faceIndexes.map((videoIndex, i) => (
+        <VideoFace
+          key={i}
+          url={videoSources[videoIndex % videoSources.length]}
+          position={facePositions[i]}
+          rotation={faceRotations[i]}
+        />
+      ))}
+    </group>
+  );
+};
+
+export default function App() {
+  return (
+    <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
+      <Canvas camera={{ position: [0, 0, 2], fov: 75 }}>
+        <ambientLight intensity={0.5} />
+        <RotatingCube />
+        <OrbitControls enableZoom={false} />
+      </Canvas>
+    </div>
+  );
+}
+
+
+// 📁 Folder structure you’ll need:
+// - public/
+//    - videos/
+//       - video1.mp4, video2.mp4, ..., video9.mp4
+
+// 🔧 To run this:
+// 1. Create a new Vite or CRA React project
+// 2. Install dependencies: three, @react-three/fiber, @react-three/drei
+// 3. Replace App.jsx with this file
+// 4. Add 6-9 short looping .mp4 files in public/videos
+// 5. Run: npm run dev (for Vite) or npm start (for CRA)
