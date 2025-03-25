@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
+// List of all video sources to be used on the cube's faces
 const videoSources = [
   "/videos/clip 1.mp4",
   "/videos/clip 2.mp4",
@@ -14,7 +15,10 @@ const videoSources = [
   "/videos/clip 8.mp4",
 ];
 
+
+// A single face of the cube with a looping video texture
 const VideoFace = ({ url, rotation, position }) => {
+  // Create and configure a HTML5 video element
   const [video] = useState(() => {
     const v = document.createElement("video");
     v.muted = true;
@@ -25,8 +29,10 @@ const VideoFace = ({ url, rotation, position }) => {
     return v;
   });
 
+  // Wrap the video in a Three.js VideoTexture
+  const texture = useRef(new THREE.VideoTexture(video)).current;
 
-  const texture = new THREE.VideoTexture(video);
+  // Play video once it's loaded; catches autoplay block errors
   useEffect(() => {
     const handlePlay = () => {
       video.play().catch(err => {
@@ -37,8 +43,12 @@ const VideoFace = ({ url, rotation, position }) => {
     return () => video.removeEventListener("loadedmetadata", handlePlay);
   }, [video]);
 
+  // Force texture to update every frame to avoid frozen video
+  useFrame(() => {
+    texture.needsUpdate = true;
+  });
 
-
+  // Render the video as a textured plane in 3D space
   return (
     <mesh rotation={rotation} position={position}>
       <planeGeometry args={[1, 1]} />
@@ -47,17 +57,19 @@ const VideoFace = ({ url, rotation, position }) => {
   );
 };
 
+// Builds and animates the rotating cube
 const RotatingCube = () => {
   const groupRef = useRef();
-  const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]);
-  const [nextIndex, setNextIndex] = useState(6);
+  const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]); // which videos to use on the 6 faces
+  const [nextIndex, setNextIndex] = useState(6); // index tracker for potential future updates
 
+  // Rotate the cube slowly around Y and X axes
   useFrame(() => {
-    groupRef.current.rotation.y += 0.005;
+    groupRef.current.rotation.y += 0.0045;
+    groupRef.current.rotation.x += 0.003;
   });
 
-  // Optionally: Replace hidden faces logic here
-
+  // Positions for each face of the cube (relative to cube center)
   const facePositions = [
     [0, 0, 0.5],  // front
     [0, 0, -0.5], // back
@@ -67,6 +79,7 @@ const RotatingCube = () => {
     [0, -0.5, 0], // bottom
   ];
 
+  // Rotations for each face so they face outward correctly
   const faceRotations = [
     [0, 0, 0],
     [0, Math.PI, 0],
@@ -76,6 +89,7 @@ const RotatingCube = () => {
     [Math.PI / 2, 0, 0],
   ];
 
+  // Map each face to a VideoFace with its own video, position, and rotation
   return (
     <group ref={groupRef}>
       {faceIndexes.map((videoIndex, i) => (
@@ -90,9 +104,11 @@ const RotatingCube = () => {
   );
 };
 
+// The main React component that renders the scene
 export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
+      {/* Set up Three.js canvas and camera */}
       <Canvas camera={{ position: [0, 0, 2], fov: 75 }}>
         <ambientLight intensity={0.5} />
         <RotatingCube />
@@ -101,7 +117,6 @@ export default function App() {
     </div>
   );
 }
-
 
 // 📁 Folder structure you’ll need:
 // - public/
