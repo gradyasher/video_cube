@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
 // List of all video sources to be used on the cube's faces
@@ -17,7 +17,7 @@ const videoSources = [
 
 
 // A single face of the cube with a looping video texture
-const VideoFace = ({ url, rotation, position }) => {
+const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
   // Create and configure a HTML5 video element
   const [video] = useState(() => {
     const v = document.createElement("video");
@@ -48,9 +48,8 @@ const VideoFace = ({ url, rotation, position }) => {
     texture.needsUpdate = true;
   });
 
-  // Render the video as a textured plane in 3D space
   return (
-    <mesh rotation={rotation} position={position}>
+    <mesh rotation={rotation} position={position} onClick={() => onClick(faceIndex)}>
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
@@ -60,6 +59,7 @@ const VideoFace = ({ url, rotation, position }) => {
 // Builds and animates the rotating cube
 const RotatingCube = () => {
   const groupRef = useRef();
+  const { camera } = useThree();
   const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]); // which videos to use on the 6 faces
   const [nextIndex, setNextIndex] = useState(6); // index tracker for potential future updates
 
@@ -89,7 +89,20 @@ const RotatingCube = () => {
     [Math.PI / 2, 0, 0],
   ];
 
-  // Map each face to a VideoFace with its own video, position, and rotation
+  const handleClick = (clickedFaceIndex) => {
+    // Convert face's world position to camera-facing direction
+    const facePosition = new THREE.Vector3(...facePositions[clickedFaceIndex]);
+    const worldPosition = groupRef.current.localToWorld(facePosition.clone());
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
+    const toFace = worldPosition.clone().sub(camera.position);
+    const dot = toFace.normalize().dot(cameraDirection);
+
+    if (dot > 0.5) {
+      alert(`clicked face ${clickedFaceIndex}`);
+    }
+  };
+
   return (
     <group ref={groupRef}>
       {faceIndexes.map((videoIndex, i) => (
@@ -98,6 +111,8 @@ const RotatingCube = () => {
           url={videoSources[videoIndex % videoSources.length]}
           position={facePositions[i]}
           rotation={faceRotations[i]}
+          faceIndex={i}
+          onClick={handleClick}
         />
       ))}
     </group>
