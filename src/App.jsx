@@ -150,7 +150,7 @@ export default function App() {
         <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
         <EffectComposer>
           <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={10.0} />
-          <DepthOfField focusDistance={0.01} focalLength={0.02} bokehScale={12} height={480} />
+          <DepthOfField focusDistance={0.1} focalLength={0.2} bokehScale={20} height={1000} />
           <Noise opacity={0.15} />
           <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
