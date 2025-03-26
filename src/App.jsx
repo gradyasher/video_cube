@@ -128,7 +128,7 @@ function VideoCube({ onFaceClick }) {
           map={texture}
           emissiveMap={texture}
           emissive={new THREE.Color(0xffffff)}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2.5}
           key={i}
         />
       ))}
@@ -141,12 +141,13 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Canvas camera={{ position: [0, 0, 10] }}>
+      <Canvas camera={{ position: [0, 0, 10] }} fog={{ color: '#4c00ff', near: 2, far: 12 }}>
+        <fog attach="fog" args={["#4c00ff", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} />
         <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
         <EffectComposer>
-          <Bloom luminanceThreshold={1.0} luminanceSmoothing={4} intensity={20.0} />
+          <Bloom luminanceThreshold={0.5} luminanceSmoothing={2} intensity={8.0} />
           <Vignette eskil={false} offset={0.4} darkness={1.2} />
         </EffectComposer>
       </Canvas>
