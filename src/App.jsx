@@ -155,11 +155,12 @@ export default function App() {
           <iframe
             width="80%"
             height="80%"
-            src={hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/")}
+            src={hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/") + "?autoplay=1&rel=0&modestbranding=1&controls=0"}
             title="YouTube video player"
             frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="autoplay; encrypted-media"
             allowFullScreen
+            style={{ borderRadius: "12px", boxShadow: "0 0 40px rgba(255,255,255,0.1)" }}
           ></iframe>
         </div>
       )}
