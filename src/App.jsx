@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
-// List of all video sources to be used on the cube's faces
 const videoSources = [
   "/videos/clip 1.mp4",
   "/videos/clip 2.mp4",
@@ -14,7 +13,7 @@ const videoSources = [
   "/videos/clip 7.mp4",
   "/videos/clip 8.mp4",
 ];
-// List of hosted YouTube links to show in modal on click
+
 const hostedVideoLinks = [
   "https://www.youtube.com/watch?v=njJAC-EAQdk",
   "https://www.youtube.com/watch?v=ldn5A29IvNU",
@@ -26,9 +25,8 @@ const hostedVideoLinks = [
   "https://www.youtube.com/watch?v=GeSePALnQKQ",
 ];
 
-// A single face of the cube with a looping video texture
-const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
-  const [video] = useState(() => {
+const VideoFace = ({ url, rotation, position, faceIndex, onClick, groupRef, camera }) => {
+  const [video, setVideo] = useState(() => {
     const v = document.createElement("video");
     v.muted = true;
     v.crossOrigin = "Anonymous";
@@ -38,9 +36,12 @@ const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
     return v;
   });
 
-  const texture = useRef(new THREE.VideoTexture(video)).current;
+  const textureRef = useRef();
 
   useEffect(() => {
+    const newTexture = new THREE.VideoTexture(video);
+    textureRef.current = newTexture;
+
     const handlePlay = () => {
       video.play().catch(err => {
         console.warn("Autoplay blocked:", err);
@@ -51,13 +52,43 @@ const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
   }, [video]);
 
   useFrame(() => {
-    texture.needsUpdate = true;
+    if (!textureRef.current) return;
+    textureRef.current.needsUpdate = true;
+
+    if (groupRef?.current && camera) {
+      const facePosition = new THREE.Vector3(...position);
+      const worldPosition = groupRef.current.localToWorld(facePosition.clone());
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      const toFace = worldPosition.clone().sub(camera.position);
+      const dot = toFace.normalize().dot(cameraDirection);
+
+      if (dot > 0.5) {
+        if (video.paused) video.play().catch(() => {});
+      } else {
+        if (!video.paused) video.pause();
+
+        // Swap video on hidden face
+        setVideo(prev => {
+          const currentPath = prev.src.replace(window.location.origin, "");
+          const currentIndex = videoSources.indexOf(currentPath);
+          const nextIndex = (currentIndex + 1) % videoSources.length;
+          const newVideo = document.createElement("video");
+          newVideo.muted = true;
+          newVideo.crossOrigin = "Anonymous";
+          newVideo.loop = true;
+          newVideo.playsInline = true;
+          newVideo.src = videoSources[nextIndex];
+          return newVideo;
+        });
+      }
+    }
   });
 
   return (
     <mesh rotation={rotation} position={position} onClick={() => onClick(faceIndex)}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
+      <meshBasicMaterial map={textureRef.current} toneMapped={false} />
     </mesh>
   );
 };
@@ -66,12 +97,12 @@ const RotatingCube = ({ onFaceClick }) => {
   const groupRef = useRef();
   const { camera } = useThree();
   const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]);
-  const [nextIndex, setNextIndex] = useState(6);
 
   useFrame(() => {
-    groupRef.current.rotation.y += 0.002;
-    groupRef.current.rotation.x += 0.001;
-  });
+      groupRef.current.rotation.x += 0.003;
+      groupRef.current.rotation.y += 0.002;
+      groupRef.current.rotation.z += 0.005;
+    });
 
   const facePositions = [
     [0, 0, 0.5],
@@ -114,6 +145,8 @@ const RotatingCube = ({ onFaceClick }) => {
           rotation={faceRotations[i]}
           faceIndex={i}
           onClick={handleClick}
+          groupRef={groupRef}
+          camera={camera}
         />
       ))}
     </group>
@@ -127,7 +160,7 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
-      <Canvas camera={{ position: [0, 0, 2], fov: 75 }}>
+      <Canvas camera={{ position: [0, 0, 2], fov: 30 }}>
         <ambientLight intensity={0.5} />
         <RotatingCube onFaceClick={setActiveVideoIndex} />
         <OrbitControls enableZoom={false} />
@@ -174,15 +207,3 @@ export default function App() {
     </div>
   );
 }
-
-// 📁 Folder structure you’ll need:
-// - public/
-//    - videos/
-//       - video1.mp4, video2.mp4, ..., video9.mp4
-
-// 🔧 To run this:
-// 1. Create a new Vite or CRA React project
-// 2. Install dependencies: three, @react-three/fiber, @react-three/drei
-// 3. Replace App.jsx with this file
-// 4. Add 6-9 short looping .mp4 files in public/videos
-// 5. Run: npm run dev (for Vite) or npm start (for CRA)
