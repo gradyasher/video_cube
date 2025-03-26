@@ -1,6 +1,9 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
 import * as THREE from "three";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { UnrealBloomPass } from "three-stdlib";
+extend({ UnrealBloomPass });
 
 const videoSources = [
   "/videos/clip 1.mp4",
@@ -66,12 +69,12 @@ function VideoCube({ onFaceClick }) {
       camera.getWorldDirection(cameraDirection);
 
       const normalVectors = [
-        new THREE.Vector3(1, 0, 0),   // right
-        new THREE.Vector3(-1, 0, 0),  // left
-        new THREE.Vector3(0, 1, 0),   // top
-        new THREE.Vector3(0, -1, 0),  // bottom
-        new THREE.Vector3(0, 0, 1),   // front
-        new THREE.Vector3(0, 0, -1),  // back
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, -1, 0),
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(0, 0, -1),
       ];
 
       const matrix = new THREE.Matrix4();
@@ -120,7 +123,14 @@ function VideoCube({ onFaceClick }) {
     <mesh ref={cubeRef} position={[0, 0, 0]}>
       <boxGeometry args={[4, 4, 4]} />
       {videoTextures.map((texture, i) => (
-        <meshStandardMaterial attach={`material-${i}`} map={texture} key={i} />
+        <meshStandardMaterial
+          attach={`material-${i}`}
+          map={texture}
+          emissiveMap={texture}
+          emissive={new THREE.Color(0xffffff)}
+          emissiveIntensity={1.5}
+          key={i}
+        />
       ))}
     </mesh>
   );
@@ -135,6 +145,10 @@ export default function App() {
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} />
         <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
+        <EffectComposer>
+          <Bloom luminanceThreshold={1.0} luminanceSmoothing={4} intensity={20.0} />
+          <Vignette eskil={false} offset={0.4} darkness={1.2} />
+        </EffectComposer>
       </Canvas>
       {activeVideoIndex !== null && (
         <div
