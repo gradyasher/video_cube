@@ -14,11 +14,20 @@ const videoSources = [
   "/videos/clip 7.mp4",
   "/videos/clip 8.mp4",
 ];
-
+// List of hosted YouTube links to show in modal on click
+const hostedVideoLinks = [
+  "https://www.youtube.com/watch?v=njJAC-EAQdk",
+  "https://www.youtube.com/watch?v=ldn5A29IvNU",
+  "https://www.youtube.com/watch?v=F-aOtychLss",
+  "https://www.youtube.com/watch?v=aDz1Vf0Wd7w",
+  "https://www.youtube.com/watch?v=Y0tjih9vlNY",
+  "https://www.youtube.com/watch?v=dK1v9P3xVnM",
+  "https://www.youtube.com/watch?v=-_0J4IbJqvk",
+  "https://www.youtube.com/watch?v=GeSePALnQKQ",
+];
 
 // A single face of the cube with a looping video texture
 const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
-  // Create and configure a HTML5 video element
   const [video] = useState(() => {
     const v = document.createElement("video");
     v.muted = true;
@@ -29,10 +38,8 @@ const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
     return v;
   });
 
-  // Wrap the video in a Three.js VideoTexture
   const texture = useRef(new THREE.VideoTexture(video)).current;
 
-  // Play video once it's loaded; catches autoplay block errors
   useEffect(() => {
     const handlePlay = () => {
       video.play().catch(err => {
@@ -43,7 +50,6 @@ const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
     return () => video.removeEventListener("loadedmetadata", handlePlay);
   }, [video]);
 
-  // Force texture to update every frame to avoid frozen video
   useFrame(() => {
     texture.needsUpdate = true;
   });
@@ -56,30 +62,26 @@ const VideoFace = ({ url, rotation, position, faceIndex, onClick }) => {
   );
 };
 
-// Builds and animates the rotating cube
-const RotatingCube = () => {
+const RotatingCube = ({ onFaceClick }) => {
   const groupRef = useRef();
   const { camera } = useThree();
-  const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]); // which videos to use on the 6 faces
-  const [nextIndex, setNextIndex] = useState(6); // index tracker for potential future updates
+  const [faceIndexes, setFaceIndexes] = useState([0, 1, 2, 3, 4, 5]);
+  const [nextIndex, setNextIndex] = useState(6);
 
-  // Rotate the cube slowly around Y and X axes
   useFrame(() => {
-    groupRef.current.rotation.y += 0.0045;
-    groupRef.current.rotation.x += 0.003;
+    groupRef.current.rotation.y += 0.002;
+    groupRef.current.rotation.x += 0.001;
   });
 
-  // Positions for each face of the cube (relative to cube center)
   const facePositions = [
-    [0, 0, 0.5],  // front
-    [0, 0, -0.5], // back
-    [0.5, 0, 0],  // right
-    [-0.5, 0, 0], // left
-    [0, 0.5, 0],  // top
-    [0, -0.5, 0], // bottom
+    [0, 0, 0.5],
+    [0, 0, -0.5],
+    [0.5, 0, 0],
+    [-0.5, 0, 0],
+    [0, 0.5, 0],
+    [0, -0.5, 0],
   ];
 
-  // Rotations for each face so they face outward correctly
   const faceRotations = [
     [0, 0, 0],
     [0, Math.PI, 0],
@@ -90,7 +92,6 @@ const RotatingCube = () => {
   ];
 
   const handleClick = (clickedFaceIndex) => {
-    // Convert face's world position to camera-facing direction
     const facePosition = new THREE.Vector3(...facePositions[clickedFaceIndex]);
     const worldPosition = groupRef.current.localToWorld(facePosition.clone());
     const cameraDirection = new THREE.Vector3();
@@ -99,7 +100,7 @@ const RotatingCube = () => {
     const dot = toFace.normalize().dot(cameraDirection);
 
     if (dot > 0.5) {
-      alert(`clicked face ${clickedFaceIndex}`);
+      onFaceClick(clickedFaceIndex);
     }
   };
 
@@ -119,16 +120,57 @@ const RotatingCube = () => {
   );
 };
 
-// The main React component that renders the scene
 export default function App() {
+  const [activeVideoIndex, setActiveVideoIndex] = useState(null);
+
+  const closeModal = () => setActiveVideoIndex(null);
+
   return (
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
-      {/* Set up Three.js canvas and camera */}
       <Canvas camera={{ position: [0, 0, 2], fov: 75 }}>
         <ambientLight intensity={0.5} />
-        <RotatingCube />
+        <RotatingCube onFaceClick={setActiveVideoIndex} />
         <OrbitControls enableZoom={false} />
       </Canvas>
+      {activeVideoIndex !== null && (
+        <div
+          onClick={closeModal}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "80%",
+              height: "80%",
+              boxShadow: "0 0 40px rgba(255, 0, 255, 0.4)",
+              borderRadius: "16px",
+              overflow: "hidden",
+              background: "black",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              src={hostedVideoLinks[activeVideoIndex % hostedVideoLinks.length].replace("watch?v=", "embed/") + "?autoplay=1&modestbranding=1&rel=0&showinfo=0"}
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: "100%", height: "100%", border: "none" }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
