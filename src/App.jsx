@@ -1,8 +1,10 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
 import * as THREE from "three";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, DepthOfField, Noise } from "@react-three/postprocessing";
 import { UnrealBloomPass } from "three-stdlib";
+import { KernelSize } from "postprocessing";
+
 extend({ UnrealBloomPass });
 
 const videoSources = [
@@ -141,14 +143,16 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Canvas camera={{ position: [0, 0, 10] }} fog={{ color: '#4c00ff', near: 2, far: 12 }}>
-        <fog attach="fog" args={["#4c00ff", 2, 12]} />
+      <Canvas camera={{ position: [0, 0, 10] }} fog={{ color: '#000000', near: 2, far: 12 }}>
+        <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} />
         <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.5} luminanceSmoothing={2} intensity={8.0} />
-          <Vignette eskil={false} offset={0.4} darkness={1.2} />
+          <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={10.0} />
+          <DepthOfField focusDistance={0.01} focalLength={0.02} bokehScale={12} height={480} />
+          <Noise opacity={0.15} />
+          <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
       </Canvas>
       {activeVideoIndex !== null && (
