@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, extend, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
-import { EffectComposer, Bloom, Vignette, DepthOfField, Noise } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocessing";
 import { UnrealBloomPass } from "three-stdlib";
 import { KernelSize } from "postprocessing";
 
@@ -138,8 +138,47 @@ function VideoCube({ onFaceClick }) {
   );
 }
 
+function FogPlanes({ color = new THREE.Color(0xffffff) }) {
+  const groupRef = useRef();
+  const fogCount = 3;
+  const noise = useLoader(THREE.TextureLoader, "/textures/smoke.png");
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.children.forEach((plane, i) => {
+        plane.position.z += 0.002;
+        if (plane.position.z > 5) plane.position.z = -5 + i * 1.5;
+        plane.material.color = color;
+      });
+    }
+  });
+
+  const fogPlanes = useMemo(() => {
+    const planes = [];
+    for (let i = 0; i < fogCount; i++) {
+      planes.push(
+        <mesh key={i} position={[0, 0, -5 + i * 1.5]} rotation={[0, 0, 0]}>
+          <planeGeometry args={[20, 10]} />
+          <meshBasicMaterial
+            map={noise}
+            transparent
+            opacity={0.08}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+            color={color}
+          />
+        </mesh>
+      );
+    }
+    return planes;
+  }, [noise, color]);
+
+  return <group ref={groupRef}>{fogPlanes}</group>;
+}
+
 export default function App() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
+  const fogColor = new THREE.Color(0x88ccff);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -147,10 +186,10 @@ export default function App() {
         <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} />
+        <FogPlanes color={fogColor} />
         <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
         <EffectComposer>
           <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={10.0} />
-          <DepthOfField focusDistance={0.1} focalLength={0.2} bokehScale={20} height={1000} />
           <Noise opacity={0.15} />
           <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
