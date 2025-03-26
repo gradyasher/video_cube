@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import React, { useRef, useEffect, useMemo, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const videoSources = [
@@ -13,8 +13,20 @@ const videoSources = [
   "/videos/clip 8.mp4",
 ];
 
-function VideoCube() {
+const hostedVideoLinks = [
+  "https://www.youtube.com/watch?v=njJAC-EAQdk",
+  "https://www.youtube.com/watch?v=ldn5A29IvNU",
+  "https://www.youtube.com/watch?v=F-aOtychLss",
+  "https://www.youtube.com/watch?v=aDz1Vf0Wd7w",
+  "https://www.youtube.com/watch?v=Y0tjih9vlNY",
+  "https://www.youtube.com/watch?v=dK1v9P3xVnM",
+  "https://www.youtube.com/watch?v=-_0J4IbJqvk",
+  "https://www.youtube.com/watch?v=GeSePALnQKQ",
+];
+
+function VideoCube({ onFaceClick }) {
   const cubeRef = useRef();
+  const { camera } = useThree();
 
   const videoElements = useMemo(() => {
     return videoSources.slice(0, 6).map((src) => {
@@ -25,7 +37,6 @@ function VideoCube() {
       video.muted = true;
       video.playsInline = true;
       video.setAttribute("preload", "auto");
-      video.play().catch(() => {});
       return video;
     });
   }, []);
@@ -50,12 +61,60 @@ function VideoCube() {
     if (cubeRef.current) {
       cubeRef.current.rotation.y += 0.01;
       cubeRef.current.rotation.x += 0.005;
+
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+
+      const normalVectors = [
+        new THREE.Vector3(1, 0, 0),   // right
+        new THREE.Vector3(-1, 0, 0),  // left
+        new THREE.Vector3(0, 1, 0),   // top
+        new THREE.Vector3(0, -1, 0),  // bottom
+        new THREE.Vector3(0, 0, 1),   // front
+        new THREE.Vector3(0, 0, -1),  // back
+      ];
+
+      const matrix = new THREE.Matrix4();
+      matrix.extractRotation(cubeRef.current.matrixWorld);
+
+      normalVectors.forEach((normal, i) => {
+        const worldNormal = normal.clone().applyMatrix4(matrix);
+        const dot = worldNormal.dot(cameraDirection);
+
+        if (dot < -0.5) {
+          if (videoElements[i].paused) videoElements[i].play().catch(() => {});
+        } else {
+          if (!videoElements[i].paused) videoElements[i].pause();
+        }
+      });
     }
 
     videoTextures.forEach((texture) => {
       texture.needsUpdate = true;
     });
   });
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      const mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+      );
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(cubeRef.current, true);
+
+      if (intersects.length > 0) {
+        const intersection = intersects[0];
+        const faceIndex = Math.floor(intersection.faceIndex / 2);
+        onFaceClick(faceIndex);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [camera, onFaceClick]);
 
   return (
     <mesh ref={cubeRef} position={[0, 0, 0]}>
@@ -68,13 +127,42 @@ function VideoCube() {
 }
 
 export default function App() {
+  const [activeVideoIndex, setActiveVideoIndex] = useState(null);
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Canvas camera={{ position: [0, 0, 10] }}>
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={0.5} />
-        <VideoCube />
+        <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
       </Canvas>
+      {activeVideoIndex !== null && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setActiveVideoIndex(null)}
+        >
+          <iframe
+            width="80%"
+            height="80%"
+            src={hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/")}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      )}
     </div>
   );
 }
