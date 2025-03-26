@@ -149,6 +149,7 @@ export default function App() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
+            backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
           }}
           onClick={() => setActiveVideoIndex(null)}
         >
@@ -160,7 +161,7 @@ export default function App() {
             frameBorder="0"
             allow="autoplay; encrypted-media"
             allowFullScreen
-            style={{ borderRadius: "12px", boxShadow: "0 0 40px rgba(255,255,255,0.1)" }}
+            style={{ borderRadius: "12px", boxShadow: "0 0 80px rgba(187, 102, 255, 0.5)" }}
           ></iframe>
         </div>
       )}
