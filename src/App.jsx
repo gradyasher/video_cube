@@ -172,13 +172,14 @@ function VHSShaderMaterial() {
       }
 
       void main() {
+        float time = mod(iTime, 5.0);
         vec2 uv = gl_FragCoord.xy / iResolution.xy;
-        float fuzzOffset = fnoise(vec2(iTime*15.0,uv.y*80.0))*0.003;
-        float largeFuzzOffset = fnoise(vec2(iTime*1.0,uv.y*25.0))*0.004;
-        float vertMovementOn = (1.0-step(snoise(vec2(iTime*0.2,8.0)),0.4))*vertMovementOpt;
-        float vertJerk = (1.0-step(fnoise(vec2(iTime*1.5,5.0)),0.6))*vertJerkOpt;
-        float vertJerk2 = (1.0-step(fnoise(vec2(iTime*5.5,5.0)),0.2))*vertJerkOpt;
-        float yOffset = abs(sin(iTime)*4.0)*vertMovementOn+vertJerk*vertJerk2*0.3;
+        float fuzzOffset = fnoise(vec2(time*15.0,uv.y*80.0))*0.003;
+        float largeFuzzOffset = fnoise(vec2(time*1.0,uv.y*25.0))*0.004;
+        float vertMovementOn = (1.0-step(snoise(vec2(time*0.2,8.0)),0.4))*vertMovementOpt;
+        float vertJerk = (1.0-step(fnoise(vec2(time*1.5,5.0)),0.6))*vertJerkOpt;
+        float vertJerk2 = (1.0-step(fnoise(vec2(time*5.5,5.0)),0.2))*vertJerkOpt;
+        float yOffset = abs(sin(time)*4.0)*vertMovementOn+vertJerk*vertJerk2*0.3;
         float y = mod(uv.y+yOffset,1.0);
         float xOffset = (fuzzOffset + largeFuzzOffset) * horzFuzzOpt;
         float staticVal = 0.0;
@@ -218,6 +219,7 @@ function VHSShaderMaterial() {
     </Plane>
   );
 }
+
 
 function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
   const mesh = useRef();
