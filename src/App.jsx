@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { Canvas, useFrame, useThree, extend, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
 import * as THREE from "three";
 import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocessing";
 import { UnrealBloomPass } from "three-stdlib";
-import { KernelSize } from "postprocessing";
+import { Plane, useFBO } from "@react-three/drei";
+import { shaderMaterial } from "@react-three/drei";
 
 extend({ UnrealBloomPass });
 
@@ -29,164 +30,124 @@ const hostedVideoLinks = [
   "https://www.youtube.com/watch?v=GeSePALnQKQ",
 ];
 
-function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
-  const cubeRef = useRef();
-  const { camera } = useThree();
+const VolumetricMaterial = shaderMaterial(
+  { tDiffuse: null, lightPosition: new THREE.Vector2(0.5, 0.5) },
+  `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position, 1.0);
+    }
+  `,
+  `
+    uniform sampler2D tDiffuse;
+    uniform vec2 lightPosition;
+    varying vec2 vUv;
 
-  const videoElements = useMemo(() => {
-    return videoSources.slice(0, 6).map((src) => {
-      const video = document.createElement("video");
-      video.src = src;
-      video.crossOrigin = "Anonymous";
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute("preload", "auto");
-      return video;
+    void main() {
+      vec2 dir = vUv - lightPosition;
+      vec4 color = vec4(0.0);
+      float decay = 0.96;
+      float weight = 0.3;
+      float exposure = 0.3;
+      vec2 delta = dir * 1.0 / 60.0;
+
+      for(int i = 0; i < 60; i++) {
+        vec2 coord = vUv - delta * float(i);
+        color += texture2D(tDiffuse, coord) * weight;
+        weight *= decay;
+      }
+      color *= exposure;
+      gl_FragColor = color;
+    }
+  `
+);
+
+extend({ VolumetricMaterial });
+
+function VolumetricScattering() {
+  const material = useRef();
+  const fbo = useFBO();
+  const screen = useRef();
+  const { gl, scene, camera } = useThree();
+  const initialized = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setReady(true);
     });
   }, []);
 
-  const videoTextures = useMemo(() => {
-    return videoElements.map((video) => {
-      const texture = new THREE.VideoTexture(video);
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.format = THREE.RGBFormat;
-      return texture;
-    });
-  }, [videoElements]);
-
-  useEffect(() => {
-    videoElements.forEach((video) => {
-      video.play().catch(() => {});
-    });
-  }, [videoElements]);
-
   useFrame(() => {
-    // smooth transition of fogColor toward target
-    if (fogColor && fogColorTarget.current) {
-      fogColor.lerp(fogColorTarget.current, 0.05);
-    }
-    if (cubeRef.current) {
-      cubeRef.current.rotation.y += 0.01;
-      cubeRef.current.rotation.x += 0.005;
-
-      const cameraDirection = new THREE.Vector3();
-      camera.getWorldDirection(cameraDirection);
-
-      const normalVectors = [
-        new THREE.Vector3(1, 0, 0),
-        new THREE.Vector3(-1, 0, 0),
-        new THREE.Vector3(0, 1, 0),
-        new THREE.Vector3(0, -1, 0),
-        new THREE.Vector3(0, 0, 1),
-        new THREE.Vector3(0, 0, -1),
-      ];
-
-      const matrix = new THREE.Matrix4();
-      matrix.extractRotation(cubeRef.current.matrixWorld);
-
-      normalVectors.forEach((normal, i) => {
-        const worldNormal = normal.clone().applyMatrix4(matrix);
-        const dot = worldNormal.dot(cameraDirection);
-
-        if (dot < -0.5) {
-          if (videoElements[i].paused) videoElements[i].play().catch(() => {});
-        } else {
-          if (!videoElements[i].paused) videoElements[i].pause();
-        }
-
-        if (dot > 0.9 && setFogColor) {
-          const r = Math.random() * 0.5 + 0.5;
-          const g = Math.random() * 0.5 + 0.5;
-          const b = Math.random() * 0.5 + 0.5;
-          const target = new THREE.Color(r, g, b);
-          fogColorTarget.current.copy(target);
-        }
-      });
+    if (!initialized.current || !ready) {
+      initialized.current = true;
+      return;
     }
 
-    videoTextures.forEach((texture) => {
-      texture.needsUpdate = true;
-    });
-  });
+    if (screen.current) screen.current.visible = false;
 
-  useEffect(() => {
-    const handleClick = (event) => {
-      const mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-      );
+    gl.setRenderTarget(fbo);
+    gl.clear();
+    gl.render(scene, camera);
+    gl.setRenderTarget(null);
 
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(cubeRef.current, true);
+    if (screen.current) screen.current.visible = true;
+    if (material.current) material.current.tDiffuse = fbo.texture;
+  }, 1);
 
-      if (intersects.length > 0) {
-        const intersection = intersects[0];
-        const faceIndex = Math.floor(intersection.faceIndex / 2);
-        onFaceClick(faceIndex);
-      }
-    };
-
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, [camera, onFaceClick]);
+  if (!ready) return null;
 
   return (
-    <mesh ref={cubeRef} position={[0, 0, 0]}>
-      <boxGeometry args={[4, 4, 4]} />
-      {videoTextures.map((texture, i) => (
-        <meshStandardMaterial
-          attach={`material-${i}`}
-          map={texture}
-          emissiveMap={texture}
-          emissive={new THREE.Color(0xffffff)}
-          emissiveIntensity={2.5}
-          key={i}
+    <Plane args={[2, 2]} position={[0, 0, 0]} renderOrder={999} ref={screen}>
+      <volumetricMaterial ref={material} lightPosition={new THREE.Vector2(0.5, 0.5)} />
+    </Plane>
+  );
+}
+
+function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
+  const mesh = useRef();
+  const videoTextures = useMemo(() => {
+    return videoSources.map((src, i) => {
+      const video = document.createElement("video");
+      video.src = src;
+      video.crossOrigin = "anonymous";
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("playsinline", "true");
+      video.load();
+      video.addEventListener("canplay", () => {
+        video.play().catch((e) => console.warn("Autoplay failed", e));
+      });
+      return new THREE.VideoTexture(video);
+    });
+  }, []);
+
+  const materials = useMemo(() =>
+    videoTextures.map(
+      (texture) =>
+        new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
+    ), [videoTextures]);
+
+  useFrame(() => {
+    mesh.current.rotation.y += 0.002;
+    mesh.current.rotation.x += 0.001;
+  });
+
+  return (
+    <mesh ref={mesh} scale={[2.5, 2.5, 2.5]}>
+      <boxGeometry args={[1, 1, 1]} />
+      {materials.map((material, index) => (
+        <primitive
+          key={index}
+          attach={`material-${index}`}
+          object={material}
         />
       ))}
     </mesh>
   );
-}
-
-function FogPlanes({ color = new THREE.Color(0xffffff) }) {
-  const groupRef = useRef();
-  const fogCount = 3;
-  const noise = useLoader(THREE.TextureLoader, "/textures/smoke.png");
-  useFrame(() => {
-    if (groupRef.current) {
-      groupRef.current.children.forEach((plane, i) => {
-        // plane.position.z += 0.002;
-        // if (plane.position.z > 5) plane.position.z = -5 + i * 1.5;
-        plane.material.color = color;
-        plane.material.opacity = 0.2;
-      });
-    }
-  });
-
-  const fogPlanes = useMemo(() => {
-    const planes = [];
-    for (let i = 0; i < fogCount; i++) {
-      planes.push(
-        <mesh key={i} position={[0, 0, i ]} rotation={[0, 0, 0]}>
-          <planeGeometry args={[30, 40]} />
-          <meshBasicMaterial
-            map={noise}
-            transparent
-            opacity={0.2}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-            color={color}
-          />
-        </mesh>
-      );
-    }
-    return planes;
-  }, [noise, color]);
-
-  return <group ref={groupRef}>{fogPlanes}</group>;
 }
 
 export default function App() {
@@ -200,13 +161,18 @@ export default function App() {
         <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        <FogPlanes color={fogColor} />
-        <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} setFogColor={setFogColor} fogColor={fogColor} fogColorTarget={fogColorTarget} />
+        <VideoCube
+          onFaceClick={(index) => setActiveVideoIndex(index)}
+          setFogColor={setFogColor}
+          fogColor={fogColor}
+          fogColorTarget={fogColorTarget}
+        />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={10.0} />
+          <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={5.0} />
           <Noise opacity={0.15} />
           <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
+        <VolumetricScattering />
       </Canvas>
       {activeVideoIndex !== null && (
         <div

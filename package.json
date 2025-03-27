@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.5",
     "@react-three/postprocessing": "^3.0.4",
     "babel-plugin-glsl": "^1.0.0",
     "postprocessing": "^6.37.1",
