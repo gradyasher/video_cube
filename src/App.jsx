@@ -49,7 +49,7 @@ const VolumetricMaterial = shaderMaterial(
       vec4 color = vec4(0.0);
       float decay = .7;
       float weight = 0.5;
-      float exposure = .95;
+      float exposure = 1.5;
       vec2 delta = dir * 1.0 / 60.0;
 
       for(int i = 0; i < 60; i++) {
@@ -284,6 +284,91 @@ function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
   );
 }
 
+function BackgroundVideo() {
+  const bgVids = [
+    "/videos/bg_videos/bg 1.mp4",
+    "/videos/bg_videos/bg 2.mp4",
+    "/videos/bg_videos/bg 3.mp4",
+    "/videos/bg_videos/bg 4.mp4",
+    "/videos/bg_videos/bg 5.mp4",
+    "/videos/bg_videos/bg 6.mp4",
+    "/videos/bg_videos/bg 7.mp4",
+    "/videos/bg_videos/bg 8.mp4",
+    "/videos/bg_videos/bg 9.mp4",
+    "/videos/bg_videos/bg 10.mp4",
+  ];
+
+  const selectedSrc = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * bgVids.length);
+    return bgVids[randomIndex];
+  }, []);
+
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    const video = document.createElement("video");
+    video.src = selectedSrc;
+    video.crossOrigin = "anonymous";
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("playsinline", "true");
+
+    video.addEventListener("canplay", () => {
+      video.play().catch((e) => console.warn("Autoplay failed", e));
+      const tex = new THREE.VideoTexture(video);
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.format = THREE.RGBFormat;
+      tex.needsUpdate = true;
+      setTexture(tex);
+    });
+
+    video.load();
+  }, [selectedSrc]);
+
+  if (!texture) return null;
+
+  return (
+    <Plane args={[20, 12]} position={[0, 0, -1]} renderOrder={-1}>
+      <shaderMaterial
+        vertexShader={`
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={`
+          uniform sampler2D map;
+          uniform float warpAmount;
+          varying vec2 vUv;
+
+          void main() {
+            vec2 centered = vUv - 0.5;
+            float dist = length(centered);
+            vec2 warp = centered * pow(1.0 - dist, warpAmount);
+            vec2 uv = warp + 0.5;
+
+            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+              discard;
+            }
+
+            gl_FragColor = texture2D(map, uv);
+          }
+        `}
+        uniforms={{
+          map: { value: texture },
+          warpAmount: { value: 2.5 }, // try 2.0–5.0 for more dramatic reverse effect
+        }}
+        transparent={false}
+      />
+    </Plane>
+  );
+}
+
+
 export default function App() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
@@ -295,6 +380,7 @@ export default function App() {
         <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
+        <BackgroundVideo />
         <VideoCube
           onFaceClick={(index) => setActiveVideoIndex(index)}
           setFogColor={setFogColor}
