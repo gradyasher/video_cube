@@ -29,7 +29,7 @@ const hostedVideoLinks = [
   "https://www.youtube.com/watch?v=GeSePALnQKQ",
 ];
 
-function VideoCube({ onFaceClick }) {
+function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
   const cubeRef = useRef();
   const { camera } = useThree();
 
@@ -63,6 +63,10 @@ function VideoCube({ onFaceClick }) {
   }, [videoElements]);
 
   useFrame(() => {
+    // smooth transition of fogColor toward target
+    if (fogColor && fogColorTarget.current) {
+      fogColor.lerp(fogColorTarget.current, 0.05);
+    }
     if (cubeRef.current) {
       cubeRef.current.rotation.y += 0.01;
       cubeRef.current.rotation.x += 0.005;
@@ -90,6 +94,14 @@ function VideoCube({ onFaceClick }) {
           if (videoElements[i].paused) videoElements[i].play().catch(() => {});
         } else {
           if (!videoElements[i].paused) videoElements[i].pause();
+        }
+
+        if (dot > 0.9 && setFogColor) {
+          const r = Math.random() * 0.5 + 0.5;
+          const g = Math.random() * 0.5 + 0.5;
+          const b = Math.random() * 0.5 + 0.5;
+          const target = new THREE.Color(r, g, b);
+          fogColorTarget.current.copy(target);
         }
       });
     }
@@ -145,9 +157,10 @@ function FogPlanes({ color = new THREE.Color(0xffffff) }) {
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.children.forEach((plane, i) => {
-        plane.position.z += 0.002;
-        if (plane.position.z > 5) plane.position.z = -5 + i * 1.5;
+        // plane.position.z += 0.002;
+        // if (plane.position.z > 5) plane.position.z = -5 + i * 1.5;
         plane.material.color = color;
+        plane.material.opacity = 0.2;
       });
     }
   });
@@ -156,12 +169,12 @@ function FogPlanes({ color = new THREE.Color(0xffffff) }) {
     const planes = [];
     for (let i = 0; i < fogCount; i++) {
       planes.push(
-        <mesh key={i} position={[0, 0, -5 + i * 1.5]} rotation={[0, 0, 0]}>
-          <planeGeometry args={[20, 10]} />
+        <mesh key={i} position={[0, 0, i ]} rotation={[0, 0, 0]}>
+          <planeGeometry args={[30, 40]} />
           <meshBasicMaterial
             map={noise}
             transparent
-            opacity={0.08}
+            opacity={0.2}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
@@ -178,16 +191,17 @@ function FogPlanes({ color = new THREE.Color(0xffffff) }) {
 
 export default function App() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
-  const fogColor = new THREE.Color(0x88ccff);
+  const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
+  const fogColorTarget = useRef(fogColor.clone());
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Canvas camera={{ position: [0, 0, 10] }} fog={{ color: '#000000', near: 2, far: 12 }}>
         <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
-        <directionalLight position={[5, 5, 5]} intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={1} />
         <FogPlanes color={fogColor} />
-        <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} />
+        <VideoCube onFaceClick={(index) => setActiveVideoIndex(index)} setFogColor={setFogColor} fogColor={fogColor} fogColorTarget={fogColorTarget} />
         <EffectComposer>
           <Bloom luminanceThreshold={0.1} luminanceSmoothing={1.5} intensity={10.0} />
           <Noise opacity={0.15} />
