@@ -47,9 +47,9 @@ const VolumetricMaterial = shaderMaterial(
     void main() {
       vec2 dir = vUv - lightPosition;
       vec4 color = vec4(0.0);
-      float decay = 0.96;
-      float weight = 0.3;
-      float exposure = 0.3;
+      float decay = .7;    // faster fade
+      float weight = 0.5;    // less dense
+      float exposure = .5; // lower brightness
       vec2 delta = dir * 1.0 / 60.0;
 
       for(int i = 0; i < 60; i++) {
@@ -107,6 +107,10 @@ function VolumetricScattering() {
 
 function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
   const mesh = useRef();
+  const { gl, camera } = useThree();
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const mouse = useMemo(() => new THREE.Vector2(), []);
+
   const videoTextures = useMemo(() => {
     return videoSources.map((src, i) => {
       const video = document.createElement("video");
@@ -130,6 +134,22 @@ function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
       (texture) =>
         new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
     ), [videoTextures]);
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(mesh.current, true);
+      if (intersects.length > 0) {
+        const faceIndex = intersects[0].face.materialIndex;
+        onFaceClick(faceIndex);
+      }
+    };
+    window.addEventListener("pointerdown", handleClick);
+    return () => window.removeEventListener("pointerdown", handleClick);
+  }, [gl, camera, raycaster, mouse, onFaceClick]);
 
   useFrame(() => {
     mesh.current.rotation.y += 0.002;
@@ -157,7 +177,7 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Canvas camera={{ position: [0, 0, 10] }} fog={{ color: '#000000', near: 2, far: 12 }}>
+      <Canvas camera={{ position: [0, 0, 5] }} fog={{ color: '#000000', near: 2, far: 12 }}>
         <fog attach="fog" args={["#000000", 2, 12]} />
         <ambientLight intensity={1} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
