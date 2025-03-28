@@ -112,7 +112,7 @@ function VHSShaderMaterial() {
     uniforms: {
       iTime: { value: 0.0 },
       iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      iChannel0: { value: null } // placeholder texture
+      iChannel0: { value: null }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -165,14 +165,15 @@ function VHSShaderMaterial() {
       }
 
       float staticV(vec2 uv) {
-        float staticHeight = fnoise(vec2(9.0,iTime*1.2+3.0))*0.3+4.;
-        float staticAmount = fnoise(vec2(1.0,iTime*1.2-6.0))*0.1+0.3;
-        float staticStrength = fnoise(vec2(-9.75,iTime*0.6-3.0))*2.0+2.0;
-        return (1.0-step(fnoise(vec2(5.0*pow(iTime,2.0)+pow(uv.x*7.0,1.2),pow((mod(iTime,100.0)+100.0)*uv.y*0.3+3.0,staticHeight))),staticAmount))*staticStrength;
+        float time = mod(iTime + 1.0, 5.0);
+        float staticHeight = fnoise(vec2(9.0,time*1.2+3.0))*0.3+4.;
+        float staticAmount = fnoise(vec2(1.0,time*1.2-6.0))*0.1+0.3;
+        float staticStrength = fnoise(vec2(-9.75,time*0.6-3.0))*2.0+2.0;
+        return (1.0-step(fnoise(vec2(5.0*pow(time,2.0)+pow(uv.x*7.0,1.2),pow((mod(time,100.0)+100.0)*uv.y*0.3+3.0,staticHeight))),staticAmount))*staticStrength;
       }
 
       void main() {
-        float time = mod(iTime, 5.0);
+        float time = mod(iTime + 1.0, 5.0);
         vec2 uv = gl_FragCoord.xy / iResolution.xy;
         float fuzzOffset = fnoise(vec2(time*15.0,uv.y*80.0))*0.003;
         float largeFuzzOffset = fnoise(vec2(time*1.0,uv.y*25.0))*0.004;
