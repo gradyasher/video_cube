@@ -370,7 +370,6 @@ function BackgroundVideo() {
     </Plane>
   );
 }
-
 export default function App() {
   console.log("✅ App mounted");
 
@@ -401,25 +400,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (
-      activeVideoIndex !== null &&
-      iframeRef.current &&
-      window.YT &&
-      window.YT.Player
-    ) {
+    if (activeVideoIndex !== null && iframeRef.current) {
+      window.parent.postMessage({ type: "video-playing" }, "*");
+      console.log("📤 video-playing message sent");
+
       const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
       iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
-
-      const player = new window.YT.Player("youtube-player", {
-        events: {
-          onStateChange: (event) => {
-            if (event.data === window.YT.PlayerState.PLAYING) {
-              window.parent.postMessage({ type: "video-playing" }, "*");
-              console.log("📤 YouTube video is playing");
-            }
-          },
-        },
-      });
     }
   }, [activeVideoIndex]);
 
@@ -428,6 +414,8 @@ export default function App() {
     if (iframeRef.current) {
       iframeRef.current.src = "";
     }
+    window.parent.postMessage({ type: "video-closed" }, "*");
+    console.log("📤 video-closed message sent");
   };
 
   return (
