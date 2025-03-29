@@ -376,9 +376,10 @@ export default function App() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
   const fogColorTarget = useRef(fogColor.clone());
-
+  
   useEffect(() => {
     const handleClick = () => {
+      console.log("📤 sending postMessage to parent");
       window.parent.postMessage({ type: "video-playing" }, "*");
     };
     window.addEventListener("click", handleClick);
