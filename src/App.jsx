@@ -373,10 +373,12 @@ function BackgroundVideo() {
 
 
 export default function App() {
+  console.log("✅ App mounted");
+
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
   const fogColorTarget = useRef(fogColor.clone());
-  
+
   useEffect(() => {
     const handleClick = () => {
       console.log("📤 sending postMessage to parent");
@@ -385,6 +387,7 @@ export default function App() {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
