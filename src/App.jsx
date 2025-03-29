@@ -371,7 +371,6 @@ function BackgroundVideo() {
   );
 }
 
-
 export default function App() {
   console.log("✅ App mounted");
 
@@ -390,12 +389,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    if (!window.YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
 
     window.onYouTubeIframeAPIReady = () => {
-      new window.YT.Player("youtube-player", {
+      console.log("✅ YouTube Iframe API ready");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      activeVideoIndex !== null &&
+      iframeRef.current &&
+      window.YT &&
+      window.YT.Player
+    ) {
+      const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
+      iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
+
+      const player = new window.YT.Player("youtube-player", {
         events: {
           onStateChange: (event) => {
             if (event.data === window.YT.PlayerState.PLAYING) {
@@ -405,13 +420,6 @@ export default function App() {
           },
         },
       });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (activeVideoIndex !== null && iframeRef.current) {
-      const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
-      iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
     }
   }, [activeVideoIndex]);
 
@@ -450,7 +458,12 @@ export default function App() {
             left: 0,
             width: "100vw",
             height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 999,
+            backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
           }}
           onClick={handleOverlayClick}
         ></div>
