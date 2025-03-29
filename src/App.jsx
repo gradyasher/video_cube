@@ -377,7 +377,8 @@ export default function App() {
 
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
-  const fogColorTarget = u  seRef(fogColor.clone());
+  const fogColorTarget = useRef(fogColor.clone());
+  const iframeRef = useRef(null);
 
   useEffect(() => {
     const handleClick = () => {
@@ -389,25 +390,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-  const tag = document.createElement("script");
-  tag.src = "https://www.youtube.com/iframe_api";
-  document.body.appendChild(tag);
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 
-  window.onYouTubeIframeAPIReady = () => {
-    new window.YT.Player("youtube-player", {
-      events: {
-        onStateChange: (event) => {
-          if (event.data === window.YT.PlayerState.PLAYING) {
-            window.parent.postMessage({ type: "video-playing" }, "*");
-            console.log("📤 YouTube video is playing");
-          }
+    window.onYouTubeIframeAPIReady = () => {
+      new window.YT.Player("youtube-player", {
+        events: {
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              window.parent.postMessage({ type: "video-playing" }, "*");
+              console.log("📤 YouTube video is playing");
+            }
+          },
         },
-      },
-    });
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeVideoIndex !== null && iframeRef.current) {
+      const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
+      iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
+    }
+  }, [activeVideoIndex]);
+
+  const handleOverlayClick = () => {
+    setActiveVideoIndex(null);
+    if (iframeRef.current) {
+      iframeRef.current.src = "";
+    }
   };
-}, []);
-
-
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -428,6 +441,7 @@ export default function App() {
         <VolumetricScattering />
         <VHSShaderMaterial />
       </Canvas>
+
       {activeVideoIndex !== null && (
         <div
           style={{
@@ -436,28 +450,31 @@ export default function App() {
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.9)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
+            zIndex: 999,
           }}
-          onClick={() => setActiveVideoIndex(null)}
-        >
-          <iframe
-            id="youtube-player"
-            width="80%"
-            height="80%"
-            src={ hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/") + "?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1" }
-            title="YouTube video player"
-            frameBorder="0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            style={{ borderRadius: "12px", boxShadow: "0 0 80px rgba(187, 102, 255, 0.5)" }}
-          ></iframe>
-        </div>
+          onClick={handleOverlayClick}
+        ></div>
       )}
+
+      <iframe
+        id="youtube-player"
+        ref={iframeRef}
+        width="80%"
+        height="80%"
+        style={{
+          display: activeVideoIndex !== null ? "block" : "none",
+          position: "absolute",
+          top: "10%",
+          left: "10%",
+          borderRadius: "12px",
+          boxShadow: "0 0 80px rgba(187, 102, 255, 0.5)",
+          zIndex: 1000,
+        }}
+        frameBorder="0"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+        title="YouTube video player"
+      ></iframe>
     </div>
   );
 }
