@@ -377,6 +377,14 @@ export default function App() {
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
   const fogColorTarget = useRef(fogColor.clone());
 
+  useEffect(() => {
+    const handleClick = () => {
+      window.parent.postMessage({ type: "video-playing" }, "*");
+    };
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Canvas camera={{ position: [0, 0, 5] }} fog={{ color: '#000000', near: 2, far: 12 }}>
