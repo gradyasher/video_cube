@@ -377,7 +377,7 @@ export default function App() {
 
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
-  const fogColorTarget = useRef(fogColor.clone());
+  const fogColorTarget = u  seRef(fogColor.clone());
 
   useEffect(() => {
     const handleClick = () => {
@@ -387,6 +387,26 @@ export default function App() {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
+  useEffect(() => {
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.body.appendChild(tag);
+
+  window.onYouTubeIframeAPIReady = () => {
+    new window.YT.Player("youtube-player", {
+      events: {
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            window.parent.postMessage({ type: "video-playing" }, "*");
+            console.log("📤 YouTube video is playing");
+          }
+        },
+      },
+    });
+  };
+}, []);
+
 
 
   return (
@@ -426,9 +446,10 @@ export default function App() {
           onClick={() => setActiveVideoIndex(null)}
         >
           <iframe
+            id="youtube-player"
             width="80%"
             height="80%"
-            src={hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/") + "?autoplay=1&rel=0&modestbranding=1&controls=0"}
+            src={ hostedVideoLinks[activeVideoIndex].replace("watch?v=", "embed/") + "?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1" }
             title="YouTube video player"
             frameBorder="0"
             allow="autoplay; encrypted-media"
