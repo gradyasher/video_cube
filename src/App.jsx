@@ -409,6 +409,14 @@ export default function App() {
     }
   }, [activeVideoIndex]);
 
+  useEffect(() => {
+  // On initial mount, make sure all Framer layers get reset to visible
+    setVideoState(false);
+    window.parent.postMessage({ type: "video-closed" }, "*");
+    console.log("📤 video-closed message sent on mount");
+  }, []);
+
+
   const handleOverlayClick = () => {
     setActiveVideoIndex(null);
     if (iframeRef.current) {
@@ -417,6 +425,7 @@ export default function App() {
     window.parent.postMessage({ type: "video-closed" }, "*");
     console.log("📤 video-closed message sent");
   };
+
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -457,7 +466,7 @@ export default function App() {
         allowFullScreen
         title="YouTube video player"
       ></iframe>
-      
+
       {activeVideoIndex !== null && (
         <div
           style={{
