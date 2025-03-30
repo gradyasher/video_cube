@@ -409,6 +409,13 @@ export default function App() {
     }
   }, [activeVideoIndex]);
 
+  useEffect(() => {
+  // On initial mount, make sure all Framer layers get reset to visible
+    window.parent.postMessage({ type: "video-closed" }, "*");
+    console.log("📤 video-closed message sent on mount");
+  }, []);
+
+
   const handleOverlayClick = () => {
     setActiveVideoIndex(null);
     if (iframeRef.current) {
