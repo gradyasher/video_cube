@@ -438,25 +438,6 @@ export default function App() {
         <VHSShaderMaterial />
       </Canvas>
 
-      {activeVideoIndex !== null && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.9)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 999,
-            backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
-          }}
-          onClick={handleOverlayClick}
-        ></div>
-      )}
-
       <iframe
         id="youtube-player"
         ref={iframeRef}
@@ -476,6 +457,26 @@ export default function App() {
         allowFullScreen
         title="YouTube video player"
       ></iframe>
+      
+      {activeVideoIndex !== null && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999,
+            backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
+          }}
+          onClick={handleOverlayClick}
+        ></div>
+      )}
+
     </div>
   );
 }
