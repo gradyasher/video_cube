@@ -3,23 +3,26 @@ import { hostedVideoLinks } from "../constants/videoSources";
 
 export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) {
   const playerRef = useRef(null);
+  const primedRef = useRef(false);
 
   useEffect(() => {
     if (activeVideoIndex === null) return;
 
-    const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
-    console.log("🎥 extracted videoId:", videoId);
+    const realVideoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
+    const dummyVideoId = "4Pgz_2cSiGQ";
 
-    function createPlayer() {
-      console.log("🧱 creating YouTube player...");
+    const loadVideoId = primedRef.current ? realVideoId : dummyVideoId;
 
-      // Remove previous player instance if it exists
+    function createPlayer(videoId, autoplay = true) {
+      console.log("🧱 creating YouTube player with:", videoId);
+
+      // Clean up previous player
       if (playerRef.current) {
         playerRef.current.destroy();
         console.log("💣 destroyed previous player");
       }
 
-      // Create a new container div for YouTube player
+      // Create container if needed
       let container = document.getElementById("youtube-player-container");
       if (!container) {
         container = document.createElement("div");
@@ -37,11 +40,10 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
         document.body.appendChild(container);
       }
 
-      // Create YouTube player
       playerRef.current = new window.YT.Player(container, {
         videoId,
         playerVars: {
-          autoplay: 1,
+          autoplay: autoplay ? 1 : 0,
           rel: 0,
           modestbranding: 1,
           controls: 1,
@@ -49,51 +51,46 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
         },
         events: {
           onReady: (event) => {
-            console.log("✅ YT Player ready — calling playVideo()");
+            console.log("✅ YT Player ready — playing:", videoId);
             event.target.playVideo();
             window.postMessage("video-playing", "*");
+
+            // If dummy loaded, wait then switch to real video
+            if (!primedRef.current && videoId === dummyVideoId) {
+              primedRef.current = true;
+              setTimeout(() => {
+                createPlayer(realVideoId);
+              }, 1500); // ~1.5 seconds
+            }
           },
           onError: (e) => {
             console.warn("❌ YT Player error:", e.data);
           }
         },
       });
-
-      console.log("📺 YT.Player instance assigned:", playerRef.current);
     }
 
-    // Load YouTube API if needed
+    // Load API if needed
     if (window.YT && window.YT.Player) {
-      console.log("🚀 YT API already loaded");
-      createPlayer();
+      createPlayer(loadVideoId);
     } else {
-      console.log("📡 loading YouTube iframe API...");
-      const existingScript = document.querySelector("script[src='https://www.youtube.com/iframe_api']");
-      if (!existingScript) {
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(tag);
-      }
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
 
-      const interval = setInterval(() => {
-        if (window.YT && window.YT.Player) {
-          clearInterval(interval);
-          console.log("🌐 YT API ready — creating player");
-          createPlayer();
-        }
-      }, 200);
+      window.onYouTubeIframeAPIReady = () => {
+        createPlayer(loadVideoId);
+      };
     }
 
-    // Cleanup on unmount or overlay close
     return () => {
       if (playerRef.current && playerRef.current.destroy) {
         playerRef.current.destroy();
         console.log("🧼 cleaned up YT player");
       }
       const container = document.getElementById("youtube-player-container");
-      if (container) {
-        container.remove(); // prevent crash
-      }
+      if (container) container.remove();
+
       window.postMessage("video-closed", "*");
     };
   }, [activeVideoIndex]);
