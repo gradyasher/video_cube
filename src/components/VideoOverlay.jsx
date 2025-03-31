@@ -8,43 +8,80 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
   useEffect(() => {
     if (activeVideoIndex === null) return;
 
-    window.postMessage("video-playing", "*");
+    console.log("🔁 activeVideoIndex changed:", activeVideoIndex);
 
     const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
-    const iframe = iframeRef.current;
+    console.log("🎥 extracted videoId:", videoId);
 
-    // Load basic iframe in case YouTube API fails
-    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
+    function createPlayer() {
+      console.log("🧱 creating YouTube player...");
 
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        console.log("💣 destroyed previous player");
+      }
 
-    const initializePlayer = () => {
-      playerRef.current = new window.YT.Player(iframe, {
+      playerRef.current = new window.YT.Player("youtube-player", {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          rel: 0,
+          modestbranding: 1,
+          controls: 1,
+          enablejsapi: 1,
+        },
         events: {
-          onReady: (event) => event.target.playVideo(),
+          onReady: (event) => {
+            console.log("✅ YT Player ready — calling playVideo()");
+            event.target.playVideo();
+            window.postMessage("video-playing", "*");
+          },
+          onError: (e) => {
+            console.warn("❌ YT Player error:", e.data);
+          }
         },
       });
-    };
+
+      console.log("📺 YT.Player instance assigned:", playerRef.current);
+    }
+
 
     if (window.YT && window.YT.Player) {
-      initializePlayer();
+      console.log("🚀 YT API already loaded");
+      createPlayer();
     } else {
-      window.onYouTubeIframeAPIReady = initializePlayer;
+      console.log("📡 loading YouTube iframe API...");
+      const existingScript = document.querySelector("script[src='https://www.youtube.com/iframe_api']");
+      if (!existingScript) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+      }
+
+      const interval = setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(interval);
+          console.log("🌐 YT API ready — creating player");
+          createPlayer();
+        }
+      }, 200);
     }
 
     return () => {
-      if (playerRef.current?.destroy) {
+      if (playerRef.current && playerRef.current.destroy) {
         playerRef.current.destroy();
+        console.log("💥 cleaned up YT player");
       }
       window.postMessage("video-closed", "*");
     };
   }, [activeVideoIndex]);
 
+
   const handleOverlayClick = () => {
     setActiveVideoIndex(null);
-    if (iframeRef.current) iframeRef.current.src = "";
+    if (iframeRef.current) {
+      iframeRef.current.src = "";
+    }
     window.postMessage("video-closed", "*");
   };
 
@@ -52,25 +89,19 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
 
   return (
     <>
-      <iframe
+      <div
         id="youtube-player"
-        ref={iframeRef}
-        width="80%"
-        height="80%"
         style={{
           position: "absolute",
           top: "10%",
           left: "10%",
+          width: "80%",
+          height: "80%",
           borderRadius: "12px",
           boxShadow: "0 0 80px rgba(187, 102, 255, 0.5)",
           zIndex: 1000,
         }}
-        frameBorder="0"
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-        title="YouTube video player"
-      ></iframe>
-
+      ></div>
       <div
         style={{
           position: "absolute",
