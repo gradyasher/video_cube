@@ -8,14 +8,15 @@ import VideoCube from "./VideoCube";
 import VHSShaderMaterial from "./VHSShaderMaterial";
 import VolumetricScattering from "./VolumetricScattering";
 
-export default function MainScene({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
+export default function MainScene({ onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady, onBgReady }) {
   return (
     <Canvas camera={{ position: [0, 0, 5] }} fog={{ color: '#000000', near: 2, far: 12 }}>
       <fog attach="fog" args={["#000000", 2, 12]} />
       <ambientLight intensity={1} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
-      <BackgroundVideo />
+      <BackgroundVideo onReady={onBgReady} />
       <VideoCube
+        onCubeReady={onCubeReady}
         onFaceClick={onFaceClick}
         setFogColor={setFogColor}
         fogColor={fogColor}

@@ -17,3 +17,17 @@ export const hostedVideoLinks = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1743440343/x01yzwhmsym36k7qmpln.mp4",
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1743440347/weva45gilksokv3fsge3.mp4",
 ];
+
+
+export const bgVids = [
+  "/videos/bg_videos/bg 1.mp4",
+  "/videos/bg_videos/bg 2.mp4",
+  "/videos/bg_videos/bg 3.mp4",
+  "/videos/bg_videos/bg 4.mp4",
+  "/videos/bg_videos/bg 5.mp4",
+  "/videos/bg_videos/bg 6.mp4",
+  "/videos/bg_videos/bg 7.mp4",
+  "/videos/bg_videos/bg 8.mp4",
+  "/videos/bg_videos/bg 9.mp4",
+  "/videos/bg_videos/bg 10.mp4",
+];

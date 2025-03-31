@@ -15,7 +15,7 @@ import VideoOverlay from "./components/VideoOverlay";
 import Dgenr8Title from "./components/Dgenr8Title";
 import SoundbathLogo from "./components/SoundbathLogo";
 import MusicPlayer from "./components/MusicPlayer";
-
+import LoadingScreen from "./components/LoadingScreen";
 
 
 
@@ -26,6 +26,10 @@ export default function App() {
   const [fogColor, setFogColor] = useState(new THREE.Color(0x88ccff));
   const fogColorTarget = useRef(fogColor.clone());
   const iframeRef = useRef(null);
+
+  const [bgReady, setBgReady] = useState(false);
+  const [cubeReady, setCubeReady] = useState(false);
+  const isLoading = !(bgReady && cubeReady);
 
   useEffect(() => {
     if (!window.YT) {
@@ -51,6 +55,7 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
+      <LoadingScreen isLoading={isLoading} />
       <div
         className="title-wrapper"
         style={{
@@ -73,6 +78,8 @@ export default function App() {
         setFogColor={setFogColor}
         fogColor={fogColor}
         fogColorTarget={fogColorTarget}
+        onCubeReady={() => setCubeReady(true)}
+        onBgReady={() => setBgReady(true)}
       />
       <SoundbathLogo />
       <MusicPlayer />

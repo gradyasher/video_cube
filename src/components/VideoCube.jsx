@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { videoSources } from "../constants/videoSources";
 
 
-export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
+export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady }) {
   const mesh = useRef();
   const { gl, camera, size } = useThree();
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -34,6 +34,11 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
       (texture) =>
         new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
     ), [videoTextures]);
+
+  useEffect(() => {
+    if (onCubeReady) onCubeReady();
+  }, []);
+
 
   useEffect(() => {
     const handleClick = (event) => {
