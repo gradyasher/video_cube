@@ -6,9 +6,10 @@ import { videoSources } from "../constants/videoSources";
 
 export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget }) {
   const mesh = useRef();
-  const { gl, camera } = useThree();
+  const { gl, camera, size } = useThree();
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const mouse = useMemo(() => new THREE.Vector2(), []);
+  const isMobile = size.width < 768;
 
   const videoTextures = useMemo(() => {
     return videoSources.map((src, i) => {
@@ -56,7 +57,7 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   });
 
   return (
-    <mesh ref={mesh} scale={[2.5, 2.5, 2.5]}>
+    <mesh ref={mesh} scale={isMobile ? [1.8, 1.8, 1.8] : [2.5, 2.5, 2.5]}>
       <boxGeometry args={[1, 1, 1]} />
       {materials.map((material, index) => (
         <primitive
