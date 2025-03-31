@@ -29,7 +29,18 @@ export default function App() {
 
   const [bgReady, setBgReady] = useState(false);
   const [cubeReady, setCubeReady] = useState(false);
+  const [showMain, setShowMain] = useState(false);
+
   const isLoading = !(bgReady && cubeReady);
+
+
+  useEffect(() => {
+    if (!isLoading) {
+      const delay = setTimeout(() => setShowMain(true), 2000); // 2 second delay for animation
+      return () => clearTimeout(delay);
+    }
+  }, [isLoading]);
+
 
   useEffect(() => {
     if (!window.YT) {
@@ -55,7 +66,7 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <LoadingScreen isLoading={isLoading} />
+      <LoadingScreen isLoading={!showMain} />
       <div
         className="title-wrapper"
         style={{
