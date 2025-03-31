@@ -9,19 +9,17 @@ export default function MusicPlayer() {
     const audio = audioRef.current;
     if (!audio) return;
 
+    audio.muted = false; // <- iOS sometimes requires this before play()
+
     if (playing) {
       audio.pause();
       setPlaying(false);
     } else {
-      audio
-        .play()
-        .then(() => {
-          setPlaying(true);
-        })
-        .catch((error) => {
-          console.warn("❌ Audio play failed:", error);
-        });
+      audio.play()
+        .then(() => setPlaying(true))
+        .catch((err) => console.warn("❌ Couldn't play:", err));
     }
+
   };
 
   // 💬 respond to overlay video state

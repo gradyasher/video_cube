@@ -3,20 +3,48 @@ import { hostedVideoLinks } from "../constants/videoSources";
 
 export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) {
   const iframeRef = useRef(null);
+  const playerRef = useRef(null);
 
   useEffect(() => {
-    if (activeVideoIndex !== null && iframeRef.current) {
-      window.postMessage("video-playing", "*");
-      const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
-      iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
+    if (activeVideoIndex === null) return;
+
+    window.postMessage("video-playing", "*");
+
+    const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
+    const iframe = iframeRef.current;
+
+    // Load basic iframe in case YouTube API fails
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
+    const initializePlayer = () => {
+      playerRef.current = new window.YT.Player(iframe, {
+        events: {
+          onReady: (event) => event.target.playVideo(),
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      initializePlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = initializePlayer;
     }
+
+    return () => {
+      if (playerRef.current?.destroy) {
+        playerRef.current.destroy();
+      }
+      window.postMessage("video-closed", "*");
+    };
   }, [activeVideoIndex]);
 
   const handleOverlayClick = () => {
     setActiveVideoIndex(null);
-    if (iframeRef.current) {
-      iframeRef.current.src = "";
-    }
+    if (iframeRef.current) iframeRef.current.src = "";
     window.postMessage("video-closed", "*");
   };
 
@@ -55,7 +83,8 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
           alignItems: "center",
           justifyContent: "center",
           zIndex: 999,
-          backgroundImage: "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
+          backgroundImage:
+            "radial-gradient(circle at center, rgba(187, 102, 255, 0.4), transparent 60%)",
         }}
         onClick={handleOverlayClick}
       ></div>
