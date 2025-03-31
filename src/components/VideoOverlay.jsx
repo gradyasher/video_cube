@@ -9,7 +9,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
     if (activeVideoIndex === null) return;
 
     const realVideoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
-    const dummyVideoId = "4Pgz_2cSiGQ";
+    const dummyVideoId = "HT5b6CfDMeY";
 
     const loadVideoId = primedRef.current ? realVideoId : dummyVideoId;
 
