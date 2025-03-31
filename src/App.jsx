@@ -16,6 +16,7 @@ import Dgenr8Title from "./components/Dgenr8Title";
 import SoundbathLogo from "./components/SoundbathLogo";
 import MusicPlayer from "./components/MusicPlayer";
 import LoadingScreen from "./components/LoadingScreen";
+import HamburgerMenu from "./components/HamburgerMenu";
 
 
 
@@ -67,6 +68,7 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
+      <HamburgerMenu />
       <div
         className="title-wrapper"
         style={{
