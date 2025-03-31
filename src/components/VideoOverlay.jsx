@@ -16,7 +16,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
       <video
         src={videoUrl}
         autoPlay
-        muted
+        muted={false}
         playsInline
         controls={false}
         loop={false}
