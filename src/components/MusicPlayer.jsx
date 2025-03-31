@@ -1,57 +1,109 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function MusicPlayer() {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
   const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (playing) {
-      audioRef.current.pause();
+      audio.pause();
+      setPlaying(false);
     } else {
-      audioRef.current.play();
+      audio
+        .play()
+        .then(() => {
+          setPlaying(true);
+        })
+        .catch((error) => {
+          console.warn("❌ Audio play failed:", error);
+        });
     }
-    setPlaying(!playing);
   };
 
+  // 💬 respond to overlay video state
+  useEffect(() => {
+    const handleMessage = (event) => {
+      const msg = event.data;
+
+      if (msg === "video-playing" && playing) {
+        audioRef.current?.pause();
+        setPlaying(false);
+      }
+
+      if (msg === "video-closed" && !playing) {
+        audioRef.current
+          ?.play()
+          .then(() => setPlaying(true))
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [playing]);
+
   return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: "2vh",
-        left: 0,
-        width: "100%",
-        display: "flex",
-        justifyContent: "center",
-        zIndex: 10,
-        pointerEvents: "auto",
-      }}
-    >
-      <audio ref={audioRef} loop>
+    <>
+      <audio ref={audioRef} loop preload="auto">
         <source
           src="https://dl.dropboxusercontent.com/scl/fi/dvnmfqlup0bt8p3em5exu/mmmmdirbuz_slow.wav?rlkey=i5a8knl2stoj6rltkxwc3fj91"
           type="audio/wav"
         />
       </audio>
 
-      <button
-        onClick={togglePlay}
-        onMouseEnter={(e) => (e.target.style.background = "#CCDE0122")}
-        onMouseLeave={(e) => (e.target.style.background = "none")}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
         style={{
-          background: "none",
-          color: "#CCDE01",
-          border: "none",
-          fontFamily: "'Times New Roman', serif",
-          padding: "10px 16px",
-          fontSize: "18px",
-          letterSpacing: ".2em",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          borderRadius: "6px",
+          position: "absolute",
+          bottom: "2vh",
+          left: 0,
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          zIndex: 10,
+          pointerEvents: "auto",
         }}
       >
-        {playing ? "❚❚ Mute" : "▶ Play"}
-      </button>
-    </div>
+        <button
+          onClick={togglePlay}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "#CCDE0122")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "none")
+          }
+          style={{
+            background: "none",
+            border: "none",
+            padding: "0",
+            cursor: "pointer",
+            transition: "all 0.3s ease",
+            borderRadius: "6px",
+            outline: "none",
+          }}
+        >
+          <img
+            src={
+              playing
+                ? "/assets/mute_button_stretch_glow.png"
+                : "/assets/play_button_stretch_glow.png"
+            }
+            alt={playing ? "Mute" : "Play"}
+            style={{
+              width: "clamp(80px, 15vw, 180px)",
+              height: "auto",
+              display: "block",
+              pointerEvents: "none",
+            }}
+          />
+        </button>
+      </motion.div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
 
   useEffect(() => {
     if (activeVideoIndex !== null && iframeRef.current) {
+      window.postMessage("video-playing", "*");
       const videoId = hostedVideoLinks[activeVideoIndex].split("v=")[1];
       iframeRef.current.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&enablejsapi=1`;
     }
@@ -16,6 +17,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
     if (iframeRef.current) {
       iframeRef.current.src = "";
     }
+    window.postMessage("video-closed", "*");
   };
 
   if (activeVideoIndex === null) return null;
