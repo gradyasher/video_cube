@@ -29,22 +29,20 @@ export default function HamburgerMenu() {
         onClick={toggleMenu}
         aria-label="Toggle menu"
         style={{
-          width: "44px",
-          height: "44px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "24px",
-          fontFamily: "monospace",
-          background: "transparent",
-          border: "none",
-          borderRadius: "6px",
-          color: "#CCDE01",
+          all: "unset",
           cursor: "pointer",
-          outline: "none",
         }}
       >
-        {isOpen ? "×" : "☰"}
+        <img
+          src={isOpen ? "/assets/x_processed.png" : "/assets/hambrgr_processed.png"}
+          alt={isOpen ? "Close menu" : "Open menu"}
+          style={{
+            width: "40px",
+            height: "40px",
+            objectFit: "contain",
+            filter: "drop-shadow(0 0 4px rgba(204, 222, 1, 0.7))",
+          }}
+        />
       </button>
 
       {isOpen && (
