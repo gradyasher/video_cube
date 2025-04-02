@@ -15,48 +15,39 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   const [flickerColor, setFlickerColor] = useState(new THREE.Color());
   const flickerTimeout = useRef(null);
   const nextTriggerTimeout = useRef(null);
+  const animationFrame = useRef(null);
 
   const scheduleFlicker = () => {
-    const interval = Math.random() * 1000 + 500; // 0.5–1.5 sec
+    const interval = Math.random() * 500 + 250; // 0.25–0.75 sec
     nextTriggerTimeout.current = setTimeout(() => {
       const randomFace = Math.floor(Math.random() * 6);
       const pastelHue = Math.random();
-      const pastelColor = new THREE.Color().setHSL(pastelHue, 0.6, 0.85); // brighter pastel
+      const pastelColor = new THREE.Color().setHSL(pastelHue, 0.9, 0.95);
       setFlickerIndex(randomFace);
       setFlickerColor(pastelColor);
       setFlickerValue(0);
 
       let progress = 0;
-      const duration = 1000; // 1s flicker
+      const duration = 1000;
       const start = performance.now();
 
       const animate = (now) => {
         progress = now - start;
         const t = Math.min(progress / duration, 1);
-
-        let eased;
-        if (t < 0.5) {
-          eased = 8 * t * t * t * t;
-        } else {
-          const k = (t - 0.5) * 2;
-          eased = 1 - Math.pow(1 - k, 4);
-        }
-
+        const eased = t * t * (3 - 2 * t);
         const clamped = Math.max(0, Math.min(3 * eased, 3));
         setFlickerValue(clamped);
 
         if (t < 1) {
-          requestAnimationFrame(animate);
+          animationFrame.current = requestAnimationFrame(animate);
         } else {
           setFlickerValue(0);
-          setTimeout(() => {
-            setFlickerIndex(null);
-            scheduleFlicker();
-          }, 50);
+          setFlickerIndex(null);
+          scheduleFlicker();
         }
       };
 
-      requestAnimationFrame(animate);
+      animationFrame.current = requestAnimationFrame(animate);
     }, interval);
   };
 
@@ -65,6 +56,7 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
     return () => {
       clearTimeout(flickerTimeout.current);
       clearTimeout(nextTriggerTimeout.current);
+      cancelAnimationFrame(animationFrame.current);
     };
   }, []);
 
@@ -118,7 +110,7 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   }, [gl, camera, raycaster, mouse, onFaceClick]);
 
   useFrame(() => {
-    mesh.current.rotation.z += 0.001;
+    mesh.current.rotation.z += 0.001; 
     mesh.current.rotation.y += 0.002;
     mesh.current.rotation.x += 0.0025;
 

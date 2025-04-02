@@ -17,6 +17,7 @@ import SoundbathLogo from "./components/SoundbathLogo";
 import MusicPlayer from "./components/MusicPlayer";
 import LoadingScreen from "./components/LoadingScreen";
 import HamburgerMenu from "./components/HamburgerMenu";
+import HandClickHint from "./components/HandClickHint";
 
 
 
@@ -68,6 +69,7 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
+      <HandClickHint />
       <HamburgerMenu />
       <div
         className="title-wrapper"
