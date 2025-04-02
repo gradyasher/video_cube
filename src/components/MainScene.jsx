@@ -14,6 +14,7 @@ export default function MainScene({ onFaceClick, setFogColor, fogColor, fogColor
       <fog attach="fog" args={["#000000", 2, 12]} />
       <ambientLight intensity={1} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
+      <directionalLight position={[0, 0, 2]} intensity={1.2} color={"white"} />
       <BackgroundVideo onReady={onBgReady} />
       <VideoCube
         onCubeReady={onCubeReady}

@@ -1,8 +1,7 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { videoSources } from "../constants/videoSources";
-
 
 export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady }) {
   const mesh = useRef();
@@ -10,6 +9,64 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const mouse = useMemo(() => new THREE.Vector2(), []);
   const isMobile = size.width < 768;
+
+  const [flickerIndex, setFlickerIndex] = useState(null);
+  const [flickerValue, setFlickerValue] = useState(0);
+  const [flickerColor, setFlickerColor] = useState(new THREE.Color());
+  const flickerTimeout = useRef(null);
+  const nextTriggerTimeout = useRef(null);
+
+  const scheduleFlicker = () => {
+    const interval = Math.random() * 1000 + 500; // 0.5–1.5 sec
+    nextTriggerTimeout.current = setTimeout(() => {
+      const randomFace = Math.floor(Math.random() * 6);
+      const pastelHue = Math.random();
+      const pastelColor = new THREE.Color().setHSL(pastelHue, 0.6, 0.85); // brighter pastel
+      setFlickerIndex(randomFace);
+      setFlickerColor(pastelColor);
+      setFlickerValue(0);
+
+      let progress = 0;
+      const duration = 1000; // 1s flicker
+      const start = performance.now();
+
+      const animate = (now) => {
+        progress = now - start;
+        const t = Math.min(progress / duration, 1);
+
+        let eased;
+        if (t < 0.5) {
+          eased = 8 * t * t * t * t;
+        } else {
+          const k = (t - 0.5) * 2;
+          eased = 1 - Math.pow(1 - k, 4);
+        }
+
+        const clamped = Math.max(0, Math.min(3 * eased, 3));
+        setFlickerValue(clamped);
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setFlickerValue(0);
+          setTimeout(() => {
+            setFlickerIndex(null);
+            scheduleFlicker();
+          }, 50);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, interval);
+  };
+
+  useEffect(() => {
+    scheduleFlicker();
+    return () => {
+      clearTimeout(flickerTimeout.current);
+      clearTimeout(nextTriggerTimeout.current);
+    };
+  }, []);
 
   const videoTextures = useMemo(() => {
     return videoSources.map((src, i) => {
@@ -30,15 +87,19 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   }, []);
 
   const materials = useMemo(() =>
-    videoTextures.map(
-      (texture) =>
-        new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
-    ), [videoTextures]);
+    videoTextures.map((texture) => {
+      return new THREE.MeshStandardMaterial({
+        map: texture,
+        emissive: new THREE.Color(0x000000),
+        emissiveIntensity: 0,
+        emissiveMap: null,
+        toneMapped: false,
+      });
+    }), [videoTextures]);
 
   useEffect(() => {
     if (onCubeReady) onCubeReady();
   }, []);
-
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -57,8 +118,20 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   }, [gl, camera, raycaster, mouse, onFaceClick]);
 
   useFrame(() => {
+    mesh.current.rotation.z += 0.001;
     mesh.current.rotation.y += 0.002;
-    mesh.current.rotation.x += 0.001;
+    mesh.current.rotation.x += 0.0025;
+
+    materials.forEach((material, index) => {
+      if (!material) return;
+      const target = index === flickerIndex ? flickerValue : 0;
+      if (index === flickerIndex) material.emissive.copy(flickerColor);
+      material.emissiveIntensity = THREE.MathUtils.lerp(
+        material.emissiveIntensity,
+        target,
+        0.08
+      );
+    });
   });
 
   return (
