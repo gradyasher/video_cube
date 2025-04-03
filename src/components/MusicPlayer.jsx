@@ -5,49 +5,12 @@ export default function MusicPlayer() {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
-  const audioCtxRef = useRef(null);
-  const gainNodeRef = useRef(null);
-
-  // setup audio context + gain node after component mounts
-  useEffect(() => {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audio = audioRef.current;
-  if (!audio) return;
-
-  // Only create once
-  if (!audioCtxRef.current) {
-    const ctx = new AudioContext();
-    const gain = ctx.createGain();
-    gain.gain.value = 1;
-
-    const source = ctx.createMediaElementSource(audio);
-    source.connect(gain).connect(ctx.destination);
-
-    audioCtxRef.current = ctx;
-    gainNodeRef.current = gain;
-  }
-
-  const resumeAudio = () => {
-    if (audioCtxRef.current?.state === "suspended") {
-      audioCtxRef.current.resume().catch(console.warn);
-    }
-  };
-
-  window.addEventListener("touchstart", resumeAudio, { once: true });
-  window.addEventListener("click", resumeAudio, { once: true });
-
-  return () => {
-    window.removeEventListener("touchstart", resumeAudio);
-    window.removeEventListener("click", resumeAudio);
-  };
-}, []);
-
-
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
     audio.muted = false;
+    audio.volume = 1; // full volume — native, not via GainNode
 
     if (playing) {
       audio.pause();
@@ -60,7 +23,7 @@ export default function MusicPlayer() {
     }
   };
 
-  // 💬 respond to overlay video state
+  // Pause/resume based on video overlay state
   useEffect(() => {
     const handleMessage = (event) => {
       const msg = event.data;
