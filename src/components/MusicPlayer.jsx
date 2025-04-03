@@ -5,21 +5,51 @@ export default function MusicPlayer() {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
+  const audioCtxRef = useRef(null);
+  const gainNodeRef = useRef(null);
+
+  // setup audio context + gain node after component mounts
+  useEffect(() => {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtxRef.current = new AudioContext();
+    gainNodeRef.current = audioCtxRef.current.createGain();
+    gainNodeRef.current.gain.value = 1;
+
+    const audio = audioRef.current;
+    const track = audioCtxRef.current.createMediaElementSource(audio);
+    track.connect(gainNodeRef.current).connect(audioCtxRef.current.destination);
+
+    // auto-resume audio context on first user interaction
+    const resumeAudio = () => {
+      if (audioCtxRef.current?.state === "suspended") {
+        audioCtxRef.current.resume();
+      }
+    };
+
+    window.addEventListener("touchstart", resumeAudio, { once: true });
+    window.addEventListener("click", resumeAudio, { once: true });
+
+    return () => {
+      window.removeEventListener("touchstart", resumeAudio);
+      window.removeEventListener("click", resumeAudio);
+    };
+  }, []);
+
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.muted = false; // <- iOS sometimes requires this before play()
+    audio.muted = false;
 
     if (playing) {
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play()
+      audio
+        .play()
         .then(() => setPlaying(true))
         .catch((err) => console.warn("❌ Couldn't play:", err));
     }
-
   };
 
   // 💬 respond to overlay video state
