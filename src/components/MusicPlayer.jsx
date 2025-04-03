@@ -10,30 +10,38 @@ export default function MusicPlayer() {
 
   // setup audio context + gain node after component mounts
   useEffect(() => {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioCtxRef.current = new AudioContext();
-    gainNodeRef.current = audioCtxRef.current.createGain();
-    gainNodeRef.current.gain.value = 1;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audio = audioRef.current;
+  if (!audio) return;
 
-    const audio = audioRef.current;
-    const track = audioCtxRef.current.createMediaElementSource(audio);
-    track.connect(gainNodeRef.current).connect(audioCtxRef.current.destination);
+  // Only create once
+  if (!audioCtxRef.current) {
+    const ctx = new AudioContext();
+    const gain = ctx.createGain();
+    gain.gain.value = 1;
 
-    // auto-resume audio context on first user interaction
-    const resumeAudio = () => {
-      if (audioCtxRef.current?.state === "suspended") {
-        audioCtxRef.current.resume();
-      }
-    };
+    const source = ctx.createMediaElementSource(audio);
+    source.connect(gain).connect(ctx.destination);
 
-    window.addEventListener("touchstart", resumeAudio, { once: true });
-    window.addEventListener("click", resumeAudio, { once: true });
+    audioCtxRef.current = ctx;
+    gainNodeRef.current = gain;
+  }
 
-    return () => {
-      window.removeEventListener("touchstart", resumeAudio);
-      window.removeEventListener("click", resumeAudio);
-    };
-  }, []);
+  const resumeAudio = () => {
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.resume().catch(console.warn);
+    }
+  };
+
+  window.addEventListener("touchstart", resumeAudio, { once: true });
+  window.addEventListener("click", resumeAudio, { once: true });
+
+  return () => {
+    window.removeEventListener("touchstart", resumeAudio);
+    window.removeEventListener("click", resumeAudio);
+  };
+}, []);
+
 
   const togglePlay = () => {
     const audio = audioRef.current;
