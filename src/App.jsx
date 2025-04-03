@@ -69,7 +69,7 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
-      <HandClickHint />
+      <HandClickHint show={showMain}/>
       <HamburgerMenu />
       <div
         className="title-wrapper"
