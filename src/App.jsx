@@ -32,6 +32,8 @@ export default function App() {
   const [bgReady, setBgReady] = useState(false);
   const [cubeReady, setCubeReady] = useState(false);
   const [showMain, setShowMain] = useState(false);
+  const [hasClickedCube, setHasClickedCube] = useState(false);
+
 
   const isLoading = !(bgReady && cubeReady);
 
@@ -69,7 +71,7 @@ export default function App() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
-      <HandClickHint show={showMain}/>
+      <HandClickHint show={showMain && !hasClickedCube} />
       <HamburgerMenu />
       <div
         className="title-wrapper"
@@ -89,7 +91,10 @@ export default function App() {
         <Dgenr8Title />
       </div>
       <MainScene
-        onFaceClick={(index) => setActiveVideoIndex(index)}
+        onFaceClick={(index) => {
+          setActiveVideoIndex(index);
+          setHasClickedCube(true);
+        }}
         setFogColor={setFogColor}
         fogColor={fogColor}
         fogColorTarget={fogColorTarget}

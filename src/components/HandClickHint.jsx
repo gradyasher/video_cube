@@ -51,13 +51,16 @@ export default function HandClickHint({ show }) {
           }}
           style={{
             position: "absolute",
-            top: "45%",
-            left: "48%", // shift it a little left
-            transform: "translate(-50%, -50%) rotate(-25deg)", // rotate hand for natural angle
+            top: "47%",               // nudged downward
+            left: "49%",              // nudged to the right
+            translateX: "-50%",
+            translateY: "-50%",
+            rotate: "-25deg",
             width: "160px",
             height: "auto",
             zIndex: 20,
             pointerEvents: "none",
+            transformOrigin: "center",
           }}
         />
       )}
