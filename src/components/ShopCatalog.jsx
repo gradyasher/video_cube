@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const products = [
   {
@@ -6,22 +8,22 @@ const products = [
     name: "glitch tee",
     price: "$29",
     model: "/models/2troofz.glb",
-    image: "/assets/thumbnails/2troofz.png",
-    link: "https://your-shop-link.com",
+    image: "/assets/thumbnails/2troofz.png"
   },
   {
     id: "soundbath-shirt",
     name: "soundbath shirt",
     price: "$29",
     model: "/models/allover1.glb",
-    image: "/assets/thumbnails/allover1.png",
-    link: "https://your-shop-link.com",
+    image: "/assets/thumbnails/allover1.png"
   },
 
 ];
 
 
 export default function ShopCatalog() {
+  const navigate = useNavigate();
+  
   return (
     <div
       style={{

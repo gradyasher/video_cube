@@ -1,25 +1,7 @@
-// src/pages/Shop.jsx
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import ShopScene from "../components/ShopScene";
 import TitleOverlay from "../components/TitleOverlay";
-
-const products = [
-  {
-    id: 1,
-    name: "glitch tee",
-    price: "$29",
-    image: "/assets/glitch-tee.png",
-    link: "https://your-shop-link.com",
-  },
-  {
-    id: 2,
-    name: "sticker pack",
-    price: "$8",
-    image: "/assets/sticker-pack.png",
-    link: "https://your-shop-link.com",
-  },
-];
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -27,11 +9,14 @@ function useQuery() {
 
 export default function ShopPage() {
   const query = useQuery();
-  const modelParam = query.get("model");
+  const modelParam = query.get("model"); // ✅ decode it
+  const decodedModel = decodeURIComponent(modelParam);
+
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-      <ShopScene />
+      <ShopScene modelPath={modelParam} /> {/* ✅ pass to ShopScene */}
+
       <div
         style={{
           position: "absolute",
