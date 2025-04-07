@@ -52,8 +52,11 @@ function FloatingShirt({ modelPath }) {
   );
 }
 
-export default function ShopScene() {
-  const [currentModelIndex, setCurrentModelIndex] = useState(0);
+export default function ShopScene({ initialModel }) {
+  const initialIndex = models.findIndex((m) => m === initialModel);
+  const [currentModelIndex, setCurrentModelIndex] = useState(
+    initialIndex >= 0 ? initialIndex : 0
+  );
 
   const handleNext = () => {
     console.log("hit next");

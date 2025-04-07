@@ -6,7 +6,7 @@ import { bgVids } from "../constants/videoSources";
 
 
 
-export default function BackgroundVideo({ onReady }) {
+export default function BackgroundVideo({ onReady, scale = 1 }) {
   const selectedSrc = useMemo(() => {
     const randomIndex = Math.floor(Math.random() * bgVids.length);
     return bgVids[randomIndex];
@@ -41,8 +41,11 @@ export default function BackgroundVideo({ onReady }) {
 
   if (!texture) return null;
 
+  const width = 35 * scale;
+  const height = 25 * scale;
+
   return (
-    <Plane args={[35, 25]} position={[0, 0, -5]} renderOrder={-1}>
+    <Plane args={[width, height]} position={[0, 0, -5]} renderOrder={-1}>
       <shaderMaterial
         vertexShader={backgroundShader.vertexShader}
         fragmentShader={backgroundShader.fragmentShader}

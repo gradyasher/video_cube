@@ -1,6 +1,6 @@
 // src/pages/Shop.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import ShopScene from "../components/ShopScene";
 import TitleOverlay from "../components/TitleOverlay";
 
@@ -21,7 +21,14 @@ const products = [
   },
 ];
 
-export default function Shop() {
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+export default function ShopPage() {
+  const query = useQuery();
+  const modelParam = query.get("model");
+
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
       <ShopScene />
