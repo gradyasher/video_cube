@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const menuItems = [
-  "/assets/a b o u t_processed.png",
-  "/assets/d i s c o r d_processed.png",
-  "/assets/s h o p_processed.png",
-  "/assets/s i g n a l_processed.png",
-  "/assets/s t r e a m_processed.png",
+  { src: "/assets/a b o u t_processed.png", link: null },
+  { src: "/assets/d i s c o r d_processed.png", link: null },
+  { src: "/assets/s h o p_processed.png", link: "/shop" },   // 👈 add link here
+  { src: "/assets/s i g n a l_processed.png", link: null },
+  { src: "/assets/s t r e a m_processed.png", link: null },
 ];
 
 export default function HamburgerMenu() {
@@ -47,18 +48,28 @@ export default function HamburgerMenu() {
 
       {isOpen && (
         <div style={{ marginTop: "2vh", display: "flex", flexDirection: "column", gap: "10px" }}>
-          {menuItems.map((src, i) => (
-            <img
-              key={i}
-              src={src}
-              alt={`menu item ${i}`}
-              style={{
-                width: "clamp(90px, 10vw, 150px)",
-                height: "auto",
-                pointerEvents: "auto",
-              }}
-            />
-          ))}
+          {menuItems.map(({ src, link }, i) => {
+            const image = (
+              <img
+                key={i}
+                src={src}
+                alt={`menu item ${i}`}
+                style={{
+                  width: "clamp(90px, 10vw, 150px)",
+                  height: "auto",
+                  pointerEvents: "auto",
+                }}
+              />
+            );
+
+            return link ? (
+              <Link to={link} key={i}>
+                {image}
+              </Link>
+            ) : (
+              image
+            );
+          })}
         </div>
       )}
     </div>

@@ -42,7 +42,7 @@ export default function BackgroundVideo({ onReady }) {
   if (!texture) return null;
 
   return (
-    <Plane args={[20, 12]} position={[0, 0, -1]} renderOrder={-1}>
+    <Plane args={[30, 20]} position={[0, 0, -3]} renderOrder={-1}>
       <shaderMaterial
         vertexShader={backgroundShader.vertexShader}
         fragmentShader={backgroundShader.fragmentShader}
