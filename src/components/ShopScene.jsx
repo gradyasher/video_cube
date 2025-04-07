@@ -5,6 +5,7 @@ import { EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useGLTF } from "@react-three/drei";
 import BackgroundVideo from "./BackgroundVideo";
 import VHSShaderMaterial from "./VHSShaderMaterial";
+import * as THREE from "three";
 
 useGLTF.preload("/models/2troofz.glb");
 useGLTF.preload("/models/allover1.glb");
@@ -16,24 +17,29 @@ const models = [
 ];
 
 function FloatingShirt({ modelPath }) {
-  const glb = useGLTF(modelPath, true);
+  const glb = useGLTF(modelPath);
   const ref = useRef();
-  console.log("Loaded model:", modelPath, glb);
 
-  if (!glb?.scene) {
-    console.warn("No scene in model:", modelPath);
-    return null;
-  }
+  const targetPos = useRef(new THREE.Vector3(0, -1.2, 0));
 
   useEffect(() => {
     if (ref.current) {
-      ref.current.rotation.y = 0; // ✅ reset rotation on model switch
+      ref.current.rotation.y = 0;
+      ref.current.position.set(-5, -2.2, -2);
+      targetPos.current.set(0, -2.2, -2);
     }
   }, [modelPath]);
 
   useFrame(() => {
     if (ref.current) {
-      ref.current.rotation.y += 0.003;
+      // distance from center determines spin speed
+      const distance = Math.abs(ref.current.position.x);
+      const spinSpeed = THREE.MathUtils.lerp(0.03, 0.003, 1 - (Math.min(distance / 5, 1)*15));
+
+      ref.current.rotation.y += spinSpeed;
+
+      // smooth slide-in
+      ref.current.position.lerp(targetPos.current, 0.1);
     }
   });
 
@@ -41,10 +47,8 @@ function FloatingShirt({ modelPath }) {
     <primitive
       ref={ref}
       object={glb.scene}
-      position={[0, -2, 0]}
-      scale={1.2}
+      scale={1.25}
     />
-
   );
 }
 
