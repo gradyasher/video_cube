@@ -1,8 +1,9 @@
-import { React, useState } from "react";
+// src/components/ProductPage.jsx
+import { React, useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import ProductScene from "../components/ProductScene";
 import TitleOverlay from "../components/TitleOverlay";
-import useShopifyCart from "../hooks/useShopifyCart";
+import useShopifyCart from "../hooks/useShopifyCart.jsx";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -30,10 +31,16 @@ export default function ProductPage({ openCart }) {
   const modelParam = query.get("model");
   const decodedModel = decodeURIComponent(modelParam);
   const [selectedSize, setSelectedSize] = useState("L");
-
+  const { cart, fetchCart } = useShopifyCart();
   const { addItem } = useShopifyCart();
 
-  const handleBuy = async () => {
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
+
+  const handleAddToCart = async () => {
     const sizeMap = variantMap[decodedModel];
     const variantId = sizeMap?.[selectedSize];
 
@@ -47,7 +54,7 @@ export default function ProductPage({ openCart }) {
       openCart();
     } catch (err) {
       console.error("Error adding to cart:", err);
-      alert("There was a problem starting checkout.");
+      alert("There was a problem adding the item to your cart.");
     }
   };
 
@@ -72,7 +79,7 @@ export default function ProductPage({ openCart }) {
           zIndex: 30,
         }}
       >
-        cart
+        cart ({ itemCount })
       </button>
 
       {/* overlay title */}
@@ -87,13 +94,10 @@ export default function ProductPage({ openCart }) {
           pointerEvents: "none",
         }}
       >
-        <Link to="/" style={{ color: "#0ff", fontSize: "1.25rem" }}>
-          ← back to home
-        </Link>
         <TitleOverlay text="shop." />
       </div>
 
-      {/* back + buy buttons */}
+      {/* size select + add to cart button */}
       <div
         style={{
           position: "absolute",
@@ -121,7 +125,7 @@ export default function ProductPage({ openCart }) {
         </select>
 
         <button
-          onClick={handleBuy}
+          onClick={handleAddToCart}
           style={{
             fontSize: "1.25rem",
             padding: "0.75rem 1.5rem",
@@ -132,8 +136,9 @@ export default function ProductPage({ openCart }) {
             cursor: "pointer",
           }}
         >
-          buy now
+          add to cart
         </button>
+
       </div>
     </div>
   );

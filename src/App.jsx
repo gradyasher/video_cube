@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
 import PopoutCart from "./components/PopoutCart";
+import { AnimatePresence } from "framer-motion";
+
 
 export default function App() {
   const location = useLocation();
@@ -13,7 +15,6 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
-    console.log("cartOpen changed:", cartOpen);
   }, [cartOpen]);
 
   return (
@@ -30,8 +31,17 @@ export default function App() {
         />
       </Routes>
 
-      {/* 🛒 only show cart on shop pages */}
-      {isShopPage && cartOpen && <PopoutCart onClose={() => setCartOpen(false)} />}
+      {isShopPage && (
+        <AnimatePresence>
+          {cartOpen && (
+            <PopoutCart
+              isCartOpen={cartOpen}
+              onClose={() => setCartOpen(false)}
+              key="popout-cart"
+            />
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 }

@@ -1,15 +1,21 @@
 // src/pages/CatalogPage.jsx
 
-import React from "react";
+import { React, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { motion } from "framer-motion";
 import BackgroundVideo from "../components/BackgroundVideo";
 import Catalog from "../components/Catalog";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
-import useShopifyCart from "../hooks/useShopifyCart";
+import useShopifyCart from "../hooks/useShopifyCart.jsx";
 
 export default function CatalogPage({ openCart }) {
-  const { cart } = useShopifyCart();
+  const { cart, fetchCart } = useShopifyCart();
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
 
   return (
     <div
@@ -75,7 +81,7 @@ export default function CatalogPage({ openCart }) {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          🛒 cart ({cart?.lines?.edges?.length || 0})
+          🛒 cart ({ itemCount })
         </button>
 
         <div style={{ width: "100%", maxWidth: "1000px", padding: "0 2rem" }}>

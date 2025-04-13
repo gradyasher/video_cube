@@ -20,7 +20,6 @@ const models = [
 
 function FloatingShirt({ modelPath }) {
   const glb = useGLTF(modelPath);
-  console.log(glb); // see what nodes / scene is inside
   const ref = useRef();
 
   const targetPos = useRef(new THREE.Vector3(0, -1.2, 0));
