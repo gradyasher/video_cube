@@ -6,14 +6,12 @@ import { motion } from "framer-motion";
 import BackgroundVideo from "../components/BackgroundVideo";
 import Catalog from "../components/Catalog";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
-import useShopifyCart from "../hooks/useShopifyCart.jsx";
+import { useCartContext } from "../context/CartContext";
+
 
 export default function CatalogPage({ openCart }) {
-  const { cart, fetchCart } = useShopifyCart();
 
-  useEffect(() => {
-    fetchCart();
-  }, []);
+  const { cartCount, addItem, removeItem, cart } = useCartContext();
 
   const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
 
@@ -81,7 +79,7 @@ export default function CatalogPage({ openCart }) {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          🛒 cart ({ itemCount })
+          🛒 cart ({ cartCount })
         </button>
 
         <div style={{ width: "100%", maxWidth: "1000px", padding: "0 2rem" }}>

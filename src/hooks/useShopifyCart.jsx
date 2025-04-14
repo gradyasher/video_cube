@@ -17,11 +17,11 @@ export default function useShopifyCart() {
     try {
       let idToUse = cartId;
 
-      // 👇 ensure we have a usable cart ID
-      if (!idToUse) {
-        const newCart = await createCart(); // creates + sets
+      // 🛡 Ensure we have a cart ID, or create one
+      if (!idToUse || !cart?.lines?.edges?.length) {
+        const newCart = await createCart();
         idToUse = newCart.id;
-        console.log("🆕 new cart created:", idToUse);
+        console.log("🆕 created new cart:", idToUse);
       }
 
       const query = `
@@ -57,20 +57,37 @@ export default function useShopifyCart() {
         lines: [{ merchandiseId: variantId, quantity }],
       };
 
-      console.log("📦 Final GraphQL payload:", { query, variables });
-
       const result = await shopifyFetch(query, variables);
 
-      if (result?.cartLinesAdd?.cart) {
-        setCart(result.cartLinesAdd.cart);
-      } else {
-        throw new Error("❌ Could not add item to cart – empty result");
+      // 🔁 If cart was invalid (expired or bad ID), recreate and retry once
+      if (!result?.cartLinesAdd?.cart) {
+        console.warn("🗑 Shopify rejected cart. Retrying with new cart...");
+        const newCart = await createCart();
+        const retryVariables = {
+          cartId: newCart.id,
+          lines: [{ merchandiseId: variantId, quantity }],
+        };
+        const retryResult = await shopifyFetch(query, retryVariables);
+
+        if (!retryResult?.cartLinesAdd?.cart) {
+          throw new Error("❌ Retry with new cart also failed");
+        }
+
+        setCart(retryResult.cartLinesAdd.cart);
+        localStorage.setItem("shopify_cart_id", retryResult.cartLinesAdd.cart.id);
+        return;
       }
+
+      // ✅ Success case
+      setCart(result.cartLinesAdd.cart);
+      localStorage.setItem("shopify_cart_id", result.cartLinesAdd.cart.id);
     } catch (err) {
       console.error("❌ Error in addItem:", err);
       throw err;
     }
   }
+
+
 
   async function createCart() {
     const query = `
@@ -113,7 +130,14 @@ export default function useShopifyCart() {
   }
 
   async function fetchCart(id = cartId) {
-    const finalId = id || cartId || localStorage.getItem("shopify_cart_id");
+    let storedId = null;
+    try {
+      storedId = localStorage.getItem("shopify_cart_id");
+    } catch (err) {
+      console.error("🧨 error reading cart from localStorage", err);
+    }
+
+    const finalId = id || cartId || storedId;
     if (!finalId) {
       console.warn("🚫 fetchCart called without a valid cart ID");
       return null;
@@ -144,7 +168,11 @@ export default function useShopifyCart() {
     `;
 
     const data = await shopifyFetch(query, { id: finalId });
-    if (!data?.cart) throw new Error("❌ fetchCart failed");
+    if (!data?.cart) {
+      console.warn("🗑 Cart expired or invalid — creating new cart...");
+      const newCart = await createCart();
+      return newCart;
+    }
     setCart(data.cart);
     return data.cart;
   }
@@ -188,11 +216,58 @@ export default function useShopifyCart() {
     setCart(data.cartLinesRemove.cart);
   }
 
+  async function updateItemQuantity(lineId, quantity) {
+    if (quantity === 0) {
+      return removeItem(lineId); // gracefully fallback to delete
+    }
+
+    const idToUse = cartId || localStorage.getItem("shopify_cart_id");
+    if (!idToUse || !lineId || quantity < 0) return;
+
+    const query = `
+      mutation updateCartItem($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+        cartLinesUpdate(cartId: $cartId, lines: $lines) {
+          cart {
+            id
+            checkoutUrl
+            lines(first: 10) {
+              edges {
+                node {
+                  id
+                  quantity
+                  merchandise {
+                    ... on ProductVariant {
+                      title
+                      product {
+                        title
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      cartId: idToUse,
+      lines: [{ id: lineId, quantity }],
+    };
+
+    const data = await shopifyFetch(query, variables);
+    if (!data?.cartLinesUpdate?.cart) throw new Error("❌ updateItemQuantity failed");
+    setCart(data.cartLinesUpdate.cart);
+  }
+
+
   return {
     cartId,
     cart,
     addItem,
     removeItem,
     fetchCart,
+    updateItemQuantity,
   };
 }

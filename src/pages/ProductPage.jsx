@@ -3,7 +3,8 @@ import { React, useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import ProductScene from "../components/ProductScene";
 import TitleOverlay from "../components/TitleOverlay";
-import useShopifyCart from "../hooks/useShopifyCart.jsx";
+import { useCartContext } from "../context/CartContext";
+
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -30,13 +31,9 @@ export default function ProductPage({ openCart }) {
   const query = useQuery();
   const modelParam = query.get("model");
   const decodedModel = decodeURIComponent(modelParam);
-  const [selectedSize, setSelectedSize] = useState("L");
-  const { cart, fetchCart } = useShopifyCart();
-  const { addItem } = useShopifyCart();
+  const [ selectedSize, setSelectedSize] = useState("L");
+  const { cartCount, addItem, removeItem, cart } = useCartContext();
 
-  useEffect(() => {
-    fetchCart();
-  }, []);
 
   const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
 
@@ -79,7 +76,7 @@ export default function ProductPage({ openCart }) {
           zIndex: 30,
         }}
       >
-        cart ({ itemCount })
+        cart ({ cartCount })
       </button>
 
       {/* overlay title */}

@@ -53,7 +53,7 @@ function FloatingShirt({ modelPath }) {
   );
 }
 
-export default function ProductScene({ initialModel }) {
+function ProductScene({ initialModel }) {
   const initialIndex = models.findIndex((m) => m === initialModel);
   const [currentModelIndex, setCurrentModelIndex] = useState(
     initialIndex >= 0 ? initialIndex : 0
@@ -67,7 +67,7 @@ export default function ProductScene({ initialModel }) {
     setCurrentModelIndex((prev) => (prev - 1 + models.length) % models.length);
   };
   return (
-    <>
+    <div id="canvas-container">
       <Canvas
         camera={{ position: [0, 0, 5], near: 0.1, far: 1000 }}
         style={{
@@ -150,6 +150,10 @@ export default function ProductScene({ initialModel }) {
           style={{ width: "40px", height: "40px" }}
         />
       </div>
-    </>
+    </div>
   );
 }
+
+
+const MemoizedProductScene = React.memo(ProductScene);
+export default MemoizedProductScene;

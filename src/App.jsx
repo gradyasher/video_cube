@@ -7,6 +7,7 @@ import PopoutCart from "./components/PopoutCart";
 import { AnimatePresence } from "framer-motion";
 
 
+
 export default function App() {
   const location = useLocation();
   const isShopPage = location.pathname.startsWith("/shop");

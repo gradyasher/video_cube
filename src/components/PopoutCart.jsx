@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import useShopifyCart from "../hooks/useShopifyCart";
+import { useCartContext } from "../context/CartContext";
 
 export default function PopoutCart({ onClose, isCartOpen }) {
-  const { cart, removeItem, fetchCart } = useShopifyCart();
+  const { cart, removeItem, fetchCart, updateItemQuantity } = useCartContext();
   const [cartLines, setCartLines] = useState([]);
+  const [updatingLineId, setUpdatingLineId] = useState(null);
   const [loading, setLoading] = useState(true);
 
 
@@ -83,8 +84,78 @@ export default function PopoutCart({ onClose, isCartOpen }) {
         cartLines.map(({ node }) => (
           <div key={node.id} style={{ marginBottom: "1rem" }}>
             <div>
-              {node.merchandise.product.title} – {node.merchandise.title} (x{node.quantity})
+              {node.merchandise.product.title} – {node.merchandise.title}
+
+              <div style={{ display: "flex", alignItems: "center", marginTop: "0.5rem" }}>
+                <button
+                  onClick={async () => {
+                    setUpdatingLineId(node.id);
+                    await updateItemQuantity(node.id, node.quantity - 1);
+                    setUpdatingLineId(null);
+                  }}
+                  disabled={node.quantity <= 1 || updatingLineId === node.id}
+                  style={{
+                    width: "2rem",
+                    height: "2rem",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    backgroundColor: "#111",
+                    color: "#ccff00",
+                    border: "1px solid #555",
+                    borderRadius: "0.25rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "opacity 0.2s ease",
+                    opacity: updatingLineId === node.id ? 0.6 : 1,
+                  }}
+
+                >
+                  -
+                </button>
+                <span
+                  style={{
+                  width: "2rem",
+                  textAlign: "center",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  color: "#fff",
+                }}
+
+                >
+                  {node.quantity}
+                </span>
+                <button
+                  onClick={async () => {
+                    setUpdatingLineId(node.id);
+                    await updateItemQuantity(node.id, node.quantity + 1);
+                    setUpdatingLineId(null);
+                  }}
+                  disabled={updatingLineId === node.id}
+                  style={{
+                    width: "2rem",
+                    height: "2rem",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    backgroundColor: "#111",
+                    color: "#ccff00",
+                    border: "1px solid #555",
+                    borderRadius: "0.25rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "opacity 0.2s ease",
+                    opacity: updatingLineId === node.id ? 0.6 : 1,
+                  }}
+
+                >
+                  +
+                </button>
+              </div>
             </div>
+
             <button
               onClick={() => removeItem(node.id)}
               style={{
