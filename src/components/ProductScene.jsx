@@ -6,6 +6,7 @@ import { useGLTF } from "@react-three/drei";
 import BackgroundVideo from "./BackgroundVideo";
 import VHSShaderMaterial from "./VHSShaderMaterial";
 import * as THREE from "three";
+import { useNavigate } from "react-router-dom";
 
 useGLTF.preload("/models/2troofz.glb");
 useGLTF.preload("/models/allover2.glb");
@@ -58,14 +59,20 @@ function ProductScene({ initialModel }) {
   const [currentModelIndex, setCurrentModelIndex] = useState(
     initialIndex >= 0 ? initialIndex : 0
   );
+  const navigate = useNavigate();
 
   const handleNext = () => {
-    setCurrentModelIndex((prev) => (prev + 1) % models.length);
+    const nextIndex = (currentModelIndex + 1) % models.length;
+    const nextModel = models[nextIndex];
+    navigate(`/shop/view?model=${encodeURIComponent(nextModel)}`); // 👈 URL-driven
   };
 
   const handlePrev = () => {
-    setCurrentModelIndex((prev) => (prev - 1 + models.length) % models.length);
+    const prevIndex = (currentModelIndex - 1 + models.length) % models.length;
+    const prevModel = models[prevIndex];
+    navigate(`/shop/view?model=${encodeURIComponent(prevModel)}`);
   };
+
   return (
     <div id="canvas-container">
       <Canvas

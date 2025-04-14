@@ -18,10 +18,24 @@ export default function useShopifyCart() {
       let idToUse = cartId;
 
       // 🛡 Ensure we have a cart ID, or create one
-      if (!idToUse || !cart?.lines?.edges?.length) {
-        const newCart = await createCart();
-        idToUse = newCart.id;
-        console.log("🆕 created new cart:", idToUse);
+      if (!idToUse) {
+        const storedId = (() => {
+          try {
+            return localStorage.getItem("shopify_cart_id");
+          } catch {
+            return null;
+          }
+        })();
+
+        if (storedId) {
+          idToUse = storedId;
+          setCartId(storedId);
+          await fetchCart(storedId);
+        } else {
+          const newCart = await createCart();
+          idToUse = newCart.id;
+          console.log("🆕 created new cart:", idToUse);
+        }
       }
 
       const query = `

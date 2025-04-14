@@ -34,8 +34,11 @@ export default function ProductPage({ openCart }) {
   const [ selectedSize, setSelectedSize] = useState("L");
   const { cartCount, addItem, removeItem, cart } = useCartContext();
 
-
   const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
+
+  useEffect(() => {
+    setSelectedSize("L"); // reset or update size if needed
+  }, [modelParam]);
 
   const handleAddToCart = async () => {
     const sizeMap = variantMap[decodedModel];
@@ -57,7 +60,7 @@ export default function ProductPage({ openCart }) {
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-      <ProductScene initialModel={decodedModel} />
+      <ProductScene key={decodedModel} initialModel={decodedModel} />
 
       {/* 🛒 cart button in top-right */}
       <button
