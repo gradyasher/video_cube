@@ -4,7 +4,7 @@ const STOREFRONT_TOKEN = "3d2a490d6826cfbe3aba8e1cd27c720a"; // ← use your rea
 
 const endpoint = `https://${SHOPIFY_DOMAIN}/api/2023-07/graphql.json`;
 
-export async function shopifyFetch(query, variables = {}) {
+export async function shopifyFetch(query, variables = {}, attempts = 2) {
   try {
     const res = await fetch(endpoint, {
       method: "POST",
@@ -24,7 +24,10 @@ export async function shopifyFetch(query, variables = {}) {
 
     return json.data;
   } catch (err) {
-    console.error("❌ Network or parsing error:", err);
+    if (attempts > 0) {
+      console.warn("🔁 retrying Shopify fetch…", attempts);
+      return shopifyFetch(query, variables, attempts - 1);
+    }
     throw err;
   }
 }

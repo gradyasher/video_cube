@@ -42,10 +42,12 @@ export default function Catalog() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
           gap: "2rem",
+          padding: "2rem",
           maxWidth: "800px",         // 👈 keeps the grid narrow
-          width: "100%",             // 👈 prevent overflow
+          width: "100%",
+          margin: "0 auto",            // 👈 prevent overflow
         }}
       >
         {products.map((product, index) => (

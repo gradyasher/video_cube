@@ -7,11 +7,12 @@ import BackgroundVideo from "../components/BackgroundVideo";
 import Catalog from "../components/Catalog";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useCartContext } from "../context/CartContext";
+import { Link } from "react-router-dom";
 
 
 export default function CatalogPage({ openCart }) {
 
-  const { cartCount, addItem, removeItem, cart } = useCartContext();
+  const { cart, cartCount, addItem, isOffline } = useCartContext();
 
   const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
 
@@ -43,7 +44,6 @@ export default function CatalogPage({ openCart }) {
           <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
       </Canvas>
-
       <div
         style={{
           position: "relative",
@@ -64,14 +64,15 @@ export default function CatalogPage({ openCart }) {
             position: "absolute",
             top: "1rem",
             right: "1rem",
-            backgroundColor: "#ccff00",
-            color: "#000",
+            backgroundColor: isOffline ? "#444" : "#CCDE01",
+            color: isOffline ? "#999" : "#000",
             border: "none",
             padding: "0.65rem 1.4rem",
             borderRadius: "2rem",
             fontWeight: "bold",
             fontSize: "1rem",
-            cursor: "pointer",
+            cursor: isOffline ? "not-allowed" : "pointer",
+            opacity: isOffline ? 0.6 : 1,
             boxShadow: "0 0 12px #ccff00",
             textTransform: "lowercase",
             transition: "transform 0.2s ease",
@@ -81,7 +82,27 @@ export default function CatalogPage({ openCart }) {
         >
           🛒 cart ({ cartCount })
         </button>
-
+        <Link
+          to="/"
+          style={{
+            position: "absolute",
+            top: "1rem",
+            left: "1rem",
+            color: "#0ff",
+            fontSize: "1.1rem",
+            fontFamily: "monospace",
+            textDecoration: "none",
+            textTransform: "lowercase",
+            background: "transparent",
+            border: "none",
+            padding: "0.4rem 0.75rem",
+            borderRadius: "0.5rem",
+            transition: "all 0.2s ease",
+            zIndex: 30,
+          }}
+        >
+          ← back to home
+        </Link>
         <div style={{ width: "100%", maxWidth: "1000px", padding: "0 2rem" }}>
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
@@ -95,7 +116,7 @@ export default function CatalogPage({ openCart }) {
               letterSpacing: "-0.12em",
               lineHeight: "1.2em",
               textAlign: "center",
-              marginTop: 0,
+              marginTop: "4rem",   // ⬅️ was 0
               marginBottom: "2rem",
             }}
           >
