@@ -1,53 +1,73 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-
-
-const products = [
-  {
-    id: "2 troofz n a lye - dgenr8 Tee",
-    name: "2 troofz n a lye - dgenr8 Tee",
-    price: "$29",
-    model: "/models/2troofz.glb",
-    image: "/assets/thumbnails/2troofz.png"
-  },
-  {
-    id: "Psychedelic Vortex Soundbath Unisex T-Shirt",
-    name: "Psychedelic Vortex Soundbath Unisex T-Shirt",
-    price: "$29",
-    model: "/models/allover2.glb",
-    image: "/assets/thumbnails/allover2.png"
-  },
-  {
-    id: "soundbath. Radiowave Hoodie (All Over Print)",
-    name: "soundbath. Radiowave Hoodie (All Over Print)",
-    price: "$50",
-    model: "/models/hoodie1.glb",
-    image: "/assets/thumbnails/hoodie1.png"
-  },
-
-];
-
+import { shopifyFetch } from "../utils/shopifyClient";
+import { variantMap } from "../utils/variantMap";
 
 export default function Catalog() {
   const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const variantIds = Object.values(variantMap).map((item) => `"${item.variantId}"`);
+      const query = `
+        {
+          nodes(ids: [${variantIds.join(",")}]) {
+            ... on ProductVariant {
+              id
+              title
+              price {
+                amount
+                currencyCode
+              }
+              product {
+                title
+              }
+            }
+          }
+        }
+      `;
+
+      try {
+        const data = await shopifyFetch(query);
+        const productData = data.nodes.map((variant) => {
+          const modelEntry = Object.entries(variantMap).find(
+            ([, val]) => val.variantId === variant.id
+          );
+
+          const modelPath = modelEntry?.[0];
+          const image = modelEntry?.[1]?.image;
+
+          return {
+            id: variant.id,
+            name: variant.product.title,
+            price: `$${parseFloat(variant.price.amount).toFixed(2)}`,
+            model: modelPath,
+            image,
+          };
+        });
+
+        setProducts(productData);
+      } catch (err) {
+        console.error("❌ Failed to load products:", err);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",   // center the full grid
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: "center" }}>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
           gap: "2rem",
           padding: "2rem",
-          maxWidth: "800px",         // 👈 keeps the grid narrow
+          maxWidth: "800px",
           width: "100%",
-          margin: "0 auto",            // 👈 prevent overflow
+          margin: "0 auto",
         }}
       >
         {products.map((product, index) => (
@@ -58,7 +78,7 @@ export default function Catalog() {
             transition={{
               duration: 0.5,
               ease: "easeOut",
-              delay: index * 0.1, // stagger animation for each item
+              delay: index * 0.1,
             }}
             onClick={() =>
               navigate(`/shop/view?model=${encodeURIComponent(product.model)}`)
@@ -74,18 +94,13 @@ export default function Catalog() {
             <img
               src={product.image}
               alt={product.name}
-              style={{
-                width: "100%",
-                height: "auto",
-                marginBottom: "1rem",
-              }}
+              style={{ width: "100%", height: "auto", marginBottom: "1rem" }}
             />
             <p style={{ color: "#CCDE01", fontSize: "1.1rem" }}>{product.name}</p>
             <p style={{ color: "#ccc", fontSize: "0.9rem" }}>{product.price}</p>
           </motion.div>
         ))}
       </div>
-
     </div>
   );
 }

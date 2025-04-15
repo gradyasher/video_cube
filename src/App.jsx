@@ -4,19 +4,28 @@ import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
 import PopoutCart from "./components/PopoutCart";
+import CheckoutPage from "./pages/CheckoutPage";
 import { AnimatePresence } from "framer-motion";
 
 
 
 export default function App() {
   const location = useLocation();
-  const isShopPage = location.pathname.startsWith("/shop");
+  const isShopPage = location.pathname === "/shop" || location.pathname.startsWith("/shop/view");
 
   // 🔁 add state to control cart visibility
   const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
   }, [cartOpen]);
+
+  useEffect(() => {
+    if (location.pathname === "/checkout") {
+      setCartOpen(false); // 💀 force shut it down
+    }
+  }, [location.pathname]);
+
+
 
   return (
     <>
@@ -30,9 +39,10 @@ export default function App() {
           path="/shop/view"
           element={<ProductPage openCart={() => setCartOpen(true)} />}
         />
+        <Route path="/checkout" element={<CheckoutPage />} /> {/* 👈 add this */}
       </Routes>
 
-      {isShopPage && (
+      {location.pathname !== "/checkout" && (
         <AnimatePresence>
           {cartOpen && (
             <PopoutCart

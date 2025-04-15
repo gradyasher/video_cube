@@ -163,6 +163,12 @@ export default function useShopifyCart() {
           cart(id: $id) {
             id
             checkoutUrl
+            cost {
+              subtotalAmount {
+                amount
+                currencyCode
+              }
+            }
             lines(first: 10) {
               edges {
                 node {
@@ -170,6 +176,7 @@ export default function useShopifyCart() {
                   quantity
                   merchandise {
                     ... on ProductVariant {
+                      id
                       title
                       product {
                         title
@@ -182,6 +189,7 @@ export default function useShopifyCart() {
           }
         }
       `;
+
 
       const data = await shopifyFetch(query, { id: finalId });
       if (!data?.cart) {

@@ -1,6 +1,6 @@
 // src/pages/CatalogPage.jsx
 
-import { React, useEffect } from "react";
+import { React, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { motion } from "framer-motion";
 import BackgroundVideo from "../components/BackgroundVideo";
@@ -8,13 +8,53 @@ import Catalog from "../components/Catalog";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useCartContext } from "../context/CartContext";
 import { Link } from "react-router-dom";
-
+import { shopifyFetch } from "../utils/shopifyClient";
 
 export default function CatalogPage({ openCart }) {
-
   const { cart, cartCount, addItem, isOffline } = useCartContext();
+  const [shopifyProducts, setShopifyProducts] = useState([]);
 
   const itemCount = cart?.lines?.edges?.reduce((sum, edge) => sum + edge.node.quantity, 0) || 0;
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const query = `
+        {
+          products(first: 10) {
+            edges {
+              node {
+                title
+                variants(first: 10) {
+                  edges {
+                    node {
+                      id
+                      price { amount }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      try {
+        const data = await shopifyFetch(query);
+        const parsed = data.products.edges.flatMap((edge) => {
+          return edge.node.variants.edges.map((v) => ({
+            id: v.node.id,
+            title: edge.node.title,
+            price: v.node.price.amount,
+          }));
+        });
+        setShopifyProducts(parsed);
+      } catch (err) {
+        console.error("Failed to load Shopify data:", err);
+      }
+    }
+
+    fetchProducts();
+  }, []);
 
   return (
     <div
@@ -54,7 +94,7 @@ export default function CatalogPage({ openCart }) {
           flexDirection: "column",
           alignItems: "center",
           overflowY: "auto",
-          paddingTop: "4vh",
+          paddingTop: "8vh",
         }}
       >
         {/* 🛒 cart button */}
@@ -80,7 +120,7 @@ export default function CatalogPage({ openCart }) {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          🛒 cart ({ cartCount })
+          🛒 cart ({cartCount})
         </button>
         <Link
           to="/"
@@ -116,13 +156,13 @@ export default function CatalogPage({ openCart }) {
               letterSpacing: "-0.12em",
               lineHeight: "1.2em",
               textAlign: "center",
-              marginTop: "4rem",   // ⬅️ was 0
+              marginTop: 0,
               marginBottom: "2rem",
             }}
           >
             shop.
           </motion.h1>
-          <Catalog />
+          <Catalog shopifyProducts={shopifyProducts} />
         </div>
       </div>
     </div>

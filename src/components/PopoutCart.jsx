@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useCartContext } from "../context/CartContext";
+import { useNavigate } from "react-router-dom";
 
 export default function PopoutCart({ onClose, isCartOpen }) {
   const { cart, removeItem, fetchCart, updateItemQuantity, isOffline } = useCartContext();
   const [cartLines, setCartLines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!cart) {
@@ -167,7 +169,7 @@ export default function PopoutCart({ onClose, isCartOpen }) {
           </button>
         ) : (
           <button
-            onClick={() => (window.location.href = cart.checkoutUrl)}
+            onClick={() => navigate("/checkout")}
             disabled={isOffline}
             style={{
               background: isOffline ? "#333" : "#00fff7",
@@ -188,6 +190,7 @@ export default function PopoutCart({ onClose, isCartOpen }) {
           >
             checkout
           </button>
+
         )}
       </motion.div>
     </>
