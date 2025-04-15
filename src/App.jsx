@@ -3,8 +3,10 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
+import UpsellPage from "./pages/UpsellPage";
 import PopoutCart from "./components/PopoutCart";
 import CheckoutPage from "./pages/CheckoutPage";
+
 import { AnimatePresence } from "framer-motion";
 
 
@@ -40,6 +42,7 @@ export default function App() {
           element={<ProductPage openCart={() => setCartOpen(true)} />}
         />
         <Route path="/checkout" element={<CheckoutPage />} /> {/* 👈 add this */}
+        <Route path="/shop/upsell" element={<UpsellPage />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
