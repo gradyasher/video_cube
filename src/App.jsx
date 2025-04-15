@@ -6,7 +6,7 @@ import CatalogPage from "./pages/CatalogPage";
 import UpsellPage from "./pages/UpsellPage";
 import PopoutCart from "./components/PopoutCart";
 import CheckoutPage from "./pages/CheckoutPage";
-
+import MysteryRewardPage from "./pages/MysteryRewardPage";
 import { AnimatePresence } from "framer-motion";
 
 
@@ -43,6 +43,7 @@ export default function App() {
         />
         <Route path="/checkout" element={<CheckoutPage />} /> {/* 👈 add this */}
         <Route path="/shop/upsell" element={<UpsellPage />} />
+        <Route path="/mystery" element={<MysteryRewardPage />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
