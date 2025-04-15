@@ -32,10 +32,17 @@ export default function CheckoutPage() {
 
           .map(async ({ node }) => {
             const details = await getVariantDetails(node.merchandise.id);
-            const matched = Object.entries(variantMap).find(
-              ([, entry]) => entry.variantId === node.merchandise.id
-            );
-            const image = matched?.[1]?.image;
+            const image = (() => {
+              for (const entry of Object.values(variantMap)) {
+                for (const size in entry.variants) {
+                  if (entry.variants[size] === node.merchandise.id) {
+                    return entry.image;
+                  }
+                }
+              }
+              return null;
+            })();
+
             return {
               quantity: node.quantity,
               title: details?.product?.title || "Unknown product",
@@ -83,7 +90,7 @@ export default function CheckoutPage() {
           textTransform: "lowercase",
         }}
       >
-        ← back to catalog
+        ← back to shop
       </Link>
 
       <h1 style={{ fontSize: "2.5rem", marginBottom: "1.5rem" }}>ready to checkout?</h1>

@@ -15,11 +15,16 @@ export default function ProductPage({ openCart }) {
   const modelParam = query.get("model");
   const decodedModel = decodeURIComponent(modelParam);
 
-  const { cartCount, addItem, cart, isOffline } = useCartContext();
+  const { cartCount, addItem, isOffline } = useCartContext();
 
   const [productInfo, setProductInfo] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("L");
 
-  const variantId = variantMap[decodedModel]?.variantId;
+  const productEntry = variantMap[decodedModel];
+  const hasVariants = !!productEntry?.variants;
+  const variantId = hasVariants
+    ? productEntry.variants[selectedSize]
+    : productEntry?.variantId;
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -138,7 +143,6 @@ export default function ProductPage({ openCart }) {
         <TitleOverlay text="shop." />
       </div>
 
-      {/* 🧾 product name + price */}
       {productInfo && (
         <div
           style={{
@@ -154,10 +158,30 @@ export default function ProductPage({ openCart }) {
         >
           <p style={{ marginBottom: "0.5rem" }}>{productInfo.name}</p>
           <p style={{ color: "#CCDE01" }}>{productInfo.price}</p>
+
+          {hasVariants && (
+            <div style={{ marginTop: "0.5rem" }}>
+              <select
+                value={selectedSize}
+                onChange={(e) => setSelectedSize(e.target.value)}
+                style={{
+                  fontFamily: "monospace",
+                  padding: "0.4rem 0.75rem",
+                  fontSize: "1rem",
+                  borderRadius: "0.4rem",
+                }}
+              >
+                {Object.keys(productEntry.variants).map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 🛒 add to cart button */}
       <div
         style={{
           position: "absolute",

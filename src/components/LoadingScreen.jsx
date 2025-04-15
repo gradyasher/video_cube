@@ -52,7 +52,7 @@ export default function LoadingScreen({ isLoading }) {
 
             {/* logo */}
             <motion.img
-              src="/assets/soundbath.png"
+              src="/assets/loading.png"
               alt="soundbath logo"
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.2, 0.7, 0.4, 0.8, 0.2] }}
