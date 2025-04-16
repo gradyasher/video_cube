@@ -18,35 +18,6 @@ const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b))
 const approxCharWidth = 20; // monospace, estimate ~20px per character
 const minWidth = `${longestReward.length * approxCharWidth}px`;
 
-const submitEmail = async () => {
-  if (!/\S+@\S+\.\S+/.test(email)) {
-    alert("please enter a valid email");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      throw new Error(result.error || "subscription failed");
-    }
-
-    console.log("✅ email submitted to Mailchimp:", email);
-    setEmailSubmitted(true);
-  } catch (err) {
-    console.error("❌ submission error:", err);
-    alert("Something went wrong while subscribing.");
-  }
-};
-
 export default function SlotMachine({ onFinish }) {
   const [spinning, setSpinning] = useState(false);
   const [displayed, setDisplayed] = useState("?");
@@ -55,6 +26,34 @@ export default function SlotMachine({ onFinish }) {
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
 
+  const submitEmail = async () => {
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      alert("please enter a valid email");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || "subscription failed");
+      }
+
+      console.log("✅ email submitted to Mailchimp:", email);
+      setEmailSubmitted(true);
+    } catch (err) {
+      console.error("❌ submission error:", err);
+      alert("Something went wrong while subscribing.");
+    }
+  };
 
   useEffect(() => {
     let interval;
