@@ -7,6 +7,7 @@ import { variantMap } from "../utils/variantMap";
 export default function Catalog() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -105,23 +106,24 @@ export default function Catalog() {
                 aspectRatio: "1 / 1",
                 position: "relative",
                 marginBottom: "1rem",
-                backgroundColor: "#111", // placeholder color
+                backgroundColor: "transparent",
+                backdropFilter: "blur(2px)",
                 borderRadius: "0.5rem",
                 overflow: "hidden",
               }}
             >
               <img
                 src={product.image}
-                alt={product.name}
+                onLoad={() => setLoaded(true)}
                 style={{
+                  opacity: loaded ? 1 : 0,
+                  transition: "opacity 0.4s ease-in-out",
                   width: "100%",
                   height: "100%",
                   objectFit: "cover",
                   position: "absolute",
                   top: 0,
                   left: 0,
-                  transition: "opacity 0.3s ease-in-out",
-                  opacity: 1, // you can make this conditional if doing fade-ins
                 }}
               />
             </div>
