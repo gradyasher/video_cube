@@ -20,10 +20,7 @@ export const variantMap = {
   "/models/hoodie1.glb": {
     image: "/assets/thumbnails/hoodie1.png",
     variants: {
-      S:  "gid://shopify/ProductVariant/XXXXXXXXXXXX12",
-      M:  "gid://shopify/ProductVariant/XXXXXXXXXXXX13",
       L:  "gid://shopify/ProductVariant/43223983325323",
-      XL: "gid://shopify/ProductVariant/XXXXXXXXXXXX14",
     }
   },
 };
