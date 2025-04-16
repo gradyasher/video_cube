@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
@@ -13,6 +13,7 @@ import { AnimatePresence } from "framer-motion";
 
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isShopPage = location.pathname === "/shop" || location.pathname.startsWith("/shop/view");
   const [cartOpen, setCartOpen] = useState(false);
   const [videosWatched, setVideosWatched] = useState(() => {
@@ -86,6 +87,13 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    if (videosWatched >= 2 && !hasSeenMystery && location.pathname === "/") {
+      setHasSeenMystery(true);
+      localStorage.setItem("hasSeenMystery", "true");
+      navigate("/mystery"); // ✅ use navigate instead of window.location.href
+    }
+  }, [videosWatched, hasSeenMystery, location.pathname]);
 
 
 
