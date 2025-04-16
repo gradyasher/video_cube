@@ -47,9 +47,14 @@ export default function SlotMachine({ onFinish }) {
       } catch (_) {}
 
       if (!res.ok) {
-        const errorMsg = result?.error || result?.message || "subscription failed";
-        throw new Error(errorMsg);
+        if (result.message === "Already subscribed") {
+          console.log("✅ Already on the list");
+          setEmailSubmitted(true);
+          return;
+        }
+        throw new Error(result.error || "subscription failed");
       }
+
 
       console.log("✅ email submitted to Mailchimp:", email);
       setEmailSubmitted(true);
