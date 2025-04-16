@@ -12,9 +12,11 @@
   "dependencies": {
     "@loaders.gl/core": "^4.3.3",
     "@loaders.gl/gltf": "^4.3.3",
+    "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@react-three/drei": "^10.0.5",
     "@react-three/fiber": "^9.1.0",
     "@react-three/postprocessing": "^3.0.4",
+    "axios": "^1.8.4",
     "babel-plugin-glsl": "^1.0.0",
     "canvas": "^3.1.0",
     "canvas-confetti": "^1.9.3",

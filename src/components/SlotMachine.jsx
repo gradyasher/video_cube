@@ -1,6 +1,8 @@
 // src/components/SlotMachine.jsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import confetti from 'canvas-confetti';
+
 
 const rewardPool = [
   "free sticker pack",
@@ -15,6 +17,35 @@ const rewardPool = [
 const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b));
 const approxCharWidth = 20; // monospace, estimate ~20px per character
 const minWidth = `${longestReward.length * approxCharWidth}px`;
+
+const submitEmail = async () => {
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    alert("Please enter a valid email.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/subscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+    console.log("📨 Mailchimp response:", data);
+
+    if (res.ok) {
+      setEmailSubmitted(true);
+    } else {
+      alert("Subscription failed: " + data.message);
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Something went wrong. Try again later.");
+  }
+};
 
 export default function SlotMachine({ onFinish }) {
   const [spinning, setSpinning] = useState(false);
@@ -42,6 +73,12 @@ export default function SlotMachine({ onFinish }) {
           setFinalReward(final);
           setSpinning(false);
           onFinish(final);
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#CCFF00', '#00fff7', '#ffffff'],
+          });
         }
       }, 40);
     }
@@ -88,7 +125,7 @@ export default function SlotMachine({ onFinish }) {
             fontFamily: 'helvetica',
             fontSize: '2.3rem',
             color: '#CCFF00',
-            letterSpacing: '-0.07em',
+            letterSpacing: '-0.13em',
             lineHeight: '1.1',
             marginBottom: '1.5rem',
             maxWidth: '460px',
@@ -99,6 +136,22 @@ export default function SlotMachine({ onFinish }) {
         >
           congratulations! you've been selected to receive one of the following gifts:
         </motion.p>
+        <ul style={{
+          marginTop: "0rem",
+          fontFamily: "monospace",
+          fontSize: "1rem",
+          color: "#ccc",
+          textAlign: "center",
+          listStyle: "none",
+          padding: 0,
+          lineHeight: "1.8",
+        }}>
+          {rewardPool.map((reward, idx) => (
+            <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
+              • {reward}
+            </li>
+          ))}
+        </ul>
 
         {!emailSubmitted && (
           <div style={{ marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
@@ -242,19 +295,7 @@ export default function SlotMachine({ onFinish }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                onClick={() => {
-                  if (!emailSubmitted) {
-                    if (/\S+@\S+\.\S+/.test(email)) {
-                      setEmailSubmitted(true);
-                      console.log("📨 collected email:", email);
-                    } else {
-                      alert("please enter a valid email");
-                    }
-                    return;
-                  }
-                  startSpin();
-                }}
-
+                onClick={submitEmail}
                 disabled={spinning}
                 style={{
                   fontSize: "1rem",
