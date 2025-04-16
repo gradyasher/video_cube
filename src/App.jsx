@@ -34,7 +34,7 @@ export default function App() {
 
   useEffect(() => {
     const listener = (event) => {
-      if (event.data === "video-playing") {
+      if (event.data === "video-closed") {
         setVideosWatched((prev) => {
           const updated = prev + 1;
           localStorage.setItem("videosWatched", updated.toString());
@@ -45,6 +45,7 @@ export default function App() {
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
   }, []);
+
 
   useEffect(() => {
     if (videosWatched >= 2 && !hasSeenMystery && location.pathname === "/") {
