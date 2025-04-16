@@ -25,6 +25,8 @@ export default function SlotMachine({ onFinish }) {
   const [animationKey, setAnimationKey] = useState(0);
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [alreadyClaimed, setAlreadyClaimed] = useState(false);
+
 
   const submitEmail = async () => {
     if (!/\S+@\S+\.\S+/.test(email)) {
@@ -41,28 +43,27 @@ export default function SlotMachine({ onFinish }) {
         body: JSON.stringify({ email }),
       });
 
-      let result = {};
-      try {
-        result = await res.json(); // might fail if no JSON returned
-      } catch (_) {}
+      const result = await res.json();
 
       if (!res.ok) {
-        if (result.message === "Already subscribed") {
-          console.log("✅ Already on the list");
-          setEmailSubmitted(true);
-          return;
-        }
         throw new Error(result.error || "subscription failed");
       }
 
-
       console.log("✅ email submitted to Mailchimp:", email);
+
+      if (result.alreadyClaimed) {
+        setAlreadyClaimed(true);
+        return;
+      }
+
       setEmailSubmitted(true);
     } catch (err) {
-      console.error("❌ submission error:", err.message || err);
+      console.error("❌ submission error:", err);
       alert("Something went wrong while subscribing.");
     }
   };
+
+
 
 
   useEffect(() => {
@@ -123,7 +124,6 @@ export default function SlotMachine({ onFinish }) {
           width: "100%",
           boxSizing: "border-box"
         }}
-
       >
         <motion.img
           initial={{ opacity: 0, scale: 0.8 }}
@@ -133,219 +133,236 @@ export default function SlotMachine({ onFinish }) {
           alt="gongboi mascot"
           style={{ width: "100px", marginTop: "2rem" }}
         />
-        <motion.p
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          style={{
-            fontFamily: 'helvetica',
-            fontSize: '2.3rem',
-            color: '#CCFF00',
-            letterSpacing: '-0.13em',
-            lineHeight: '1.1',
-            marginBottom: '1.5rem',
-            maxWidth: '460px',
-            textAlign: 'center',
-            marginInline: 'auto',
-          }}
-
-        >
-          congratulations! you've been selected to receive one of the following gifts:
-        </motion.p>
-        <ul style={{
-          marginTop: "0rem",
-          fontFamily: "monospace",
-          fontSize: "1rem",
-          color: "#ccc",
-          textAlign: "center",
-          listStyle: "none",
-          padding: 0,
-          lineHeight: "1.8",
-        }}>
-          {rewardPool.map((reward, idx) => (
-            <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
-              • {reward}
-            </li>
-          ))}
-        </ul>
-
-        {!emailSubmitted && (
-          <div style={{ marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="email"
-              placeholder="enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                padding: "0.75rem 1rem",
-                fontSize: "1rem",
-                borderRadius: "1rem",
-                border: "2px solid #ccff00",
-                backgroundColor: "#000",
-                color: "#ccff00",
-                fontFamily: "monospace",
-                textAlign: "center",
-                width: "260px",
-                maxWidth: "80vw",
-              }}
-            />
-            <button
-              onClick={() => {
-                if (!emailSubmitted) {
-                  if (/\S+@\S+\.\S+/.test(email)) {
-                    setEmailSubmitted(true);
-                    submitEmail(); // <- make sure this is async
-                  } else {
-                    alert("please enter a valid email");
-                  }
-                  return;
-                }
-
-                startSpin(); // this should run only after emailSubmitted is true
-              }}
-
-              style={{
-                background: "#ccff00",
-                color: "#000",
-                fontWeight: "bold",
-                padding: "0.5rem 1rem",
-                borderRadius: "1rem",
-                border: "none",
-                cursor: "pointer",
-                fontFamily: "monospace"
-              }}
-            >
-              submit email →
-            </button>
-          </div>
-        )}
-
-        {emailSubmitted && (
+        {alreadyClaimed ? (
+          <p style={{
+            fontFamily: "monospace",
+            fontSize: "1rem",
+            color: "#ccff00",
+            maxWidth: "420px",
+            textAlign: "center",
+          }}>
+            you've already claimed your mystery reward. thank you!
+          </p>
+        ) : (
           <>
-            <div
+            <motion.p
+              initial={{ opacity: 0, y: -30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
               style={{
-                textAlign: "center",
-                fontFamily: "monospace",
-                color: "#CCFF00",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
+                fontFamily: 'helvetica',
+                fontSize: '2.3rem',
+                color: '#CCFF00',
+                letterSpacing: '-0.13em',
+                lineHeight: '1.1',
+                marginBottom: '1.5rem',
+                maxWidth: '460px',
+                textAlign: 'center',
+                marginInline: 'auto',
               }}
+
             >
-              <div
-                style={{
-                  fontSize: "1.6rem",
-                  marginBottom: "1rem",
-                  minHeight: "2em",
-                  minWidth: "clamp(200px, 80vw, 500px)",
-                  maxWidth: "90vw",
-                  background: "#CCFF00",
-                  color: "#000",
-                  padding: "0.5rem 1.25rem",
-                  borderRadius: "0.75rem",
-                  textAlign: "center",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={animationKey}
-                    initial={{ y: "100%", opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: "-100%", opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{
-                      position: "absolute",
-                      width: "100%",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      textAlign: "center",
-                    }}
-                  >
-                    {displayed}
-                  </motion.div>
+              congratulations! you've been selected to receive one of the following gifts:
+            </motion.p>
+            <ul style={{
+              marginTop: "0rem",
+              fontFamily: "monospace",
+              fontSize: "1rem",
+              color: "#ccc",
+              textAlign: "center",
+              listStyle: "none",
+              padding: 0,
+              lineHeight: "1.8",
+            }}>
+              {rewardPool.map((reward, idx) => (
+                <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
+                  • {reward}
+                </li>
+              ))}
+            </ul>
 
-                </AnimatePresence>
-              </div>
-
-              {!emailSubmitted && (
-                <>
-                  <ul style={{
-                    marginTop: "2rem",
-                    fontFamily: "monospace",
-                    fontSize: "1rem",
-                    color: "#ccc",
-                    textAlign: "center",
-                    listStyle: "none",
-                    padding: 0,
-                    lineHeight: "1.8",
-                  }}>
-                    {rewardPool.map((reward, idx) => (
-                      <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
-                        • {reward}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <input
-                    type="email"
-                    placeholder="enter your email to spin"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{
-                      padding: "0.75rem 1rem",
-                      borderRadius: "1rem",
-                      border: "none",
-                      marginBottom: "1rem",
-                      fontSize: "1rem",
-                      width: "100%",
-                      maxWidth: "400px",
-                      textAlign: "center",
-                    }}
-                  />
-                </>
-              )}
-
-              {!finalReward && (
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  onClick={startSpin}
-                  disabled={spinning}
+            {!emailSubmitted && (
+              <div style={{ marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+                <input
+                  type="email"
+                  placeholder="enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   style={{
+                    padding: "0.75rem 1rem",
                     fontSize: "1rem",
-                    padding: "0.75rem 1.5rem",
-                    background: "#00fff7",
-                    color: "#000",
-                    border: "none",
                     borderRadius: "1rem",
+                    border: "2px solid #ccff00",
+                    backgroundColor: "#000",
+                    color: "#ccff00",
+                    fontFamily: "monospace",
+                    textAlign: "center",
+                    width: "260px",
+                    maxWidth: "80vw",
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (!emailSubmitted) {
+                      if (/\S+@\S+\.\S+/.test(email)) {
+                        setEmailSubmitted(true);
+                        submitEmail(); // <- make sure this is async
+                      } else {
+                        alert("please enter a valid email");
+                      }
+                      return;
+                    }
+
+                    startSpin(); // this should run only after emailSubmitted is true
+                  }}
+
+                  style={{
+                    background: "#ccff00",
+                    color: "#000",
                     fontWeight: "bold",
-                    cursor: spinning ? "not-allowed" : "pointer",
-                    boxShadow: "0 0 10px #00fff7",
-                    maxWidth: "90vw",
-                    marginInline: "auto"
+                    padding: "0.5rem 1rem",
+                    borderRadius: "1rem",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "monospace"
                   }}
                 >
-                  {spinning ? "spinning..." : "reveal my reward →"}
-                </motion.button>
-              )}
-
-
-
-              {finalReward && (
-                <p style={{ marginTop: "1.25rem", color: "#fff", fontSize: "0.9rem" }}>
-                  you received: <strong>{finalReward}</strong>
+                  submit email →
+                </button>
+                <p style={{ color: "#aaa", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                  one entry per email address. for more free stuff join us on Discord!
                 </p>
-              )}
-            </div>
+              </div>
+            )}
+
+            {emailSubmitted && (
+              <>
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontFamily: "monospace",
+                    color: "#CCFF00",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "1.6rem",
+                      marginBottom: "1rem",
+                      minHeight: "2em",
+                      minWidth: "clamp(200px, 80vw, 500px)",
+                      maxWidth: "90vw",
+                      background: "#CCFF00",
+                      color: "#000",
+                      padding: "0.5rem 1.25rem",
+                      borderRadius: "0.75rem",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      position: "relative",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={animationKey}
+                        initial={{ y: "100%", opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: "-100%", opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          position: "absolute",
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          textAlign: "center",
+                        }}
+                      >
+                        {displayed}
+                      </motion.div>
+
+                    </AnimatePresence>
+                  </div>
+
+                  {!emailSubmitted && (
+                    <>
+                      <ul style={{
+                        marginTop: "2rem",
+                        fontFamily: "monospace",
+                        fontSize: "1rem",
+                        color: "#ccc",
+                        textAlign: "center",
+                        listStyle: "none",
+                        padding: 0,
+                        lineHeight: "1.8",
+                      }}>
+                        {rewardPool.map((reward, idx) => (
+                          <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
+                            • {reward}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <input
+                        type="email"
+                        placeholder="enter your email to spin"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{
+                          padding: "0.75rem 1rem",
+                          borderRadius: "1rem",
+                          border: "none",
+                          marginBottom: "1rem",
+                          fontSize: "1rem",
+                          width: "100%",
+                          maxWidth: "400px",
+                          textAlign: "center",
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {!finalReward && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.4 }}
+                      onClick={startSpin}
+                      disabled={spinning}
+                      style={{
+                        fontSize: "1rem",
+                        padding: "0.75rem 1.5rem",
+                        background: "#00fff7",
+                        color: "#000",
+                        border: "none",
+                        borderRadius: "1rem",
+                        fontWeight: "bold",
+                        cursor: spinning ? "not-allowed" : "pointer",
+                        boxShadow: "0 0 10px #00fff7",
+                        maxWidth: "90vw",
+                        marginInline: "auto"
+                      }}
+                    >
+                      {spinning ? "spinning..." : "reveal my reward →"}
+                    </motion.button>
+                  )}
+
+
+
+                  {finalReward && (
+                    <p style={{ marginTop: "1.25rem", color: "#fff", fontSize: "0.9rem" }}>
+                      you received: <strong>{finalReward}</strong>
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </motion.div>
