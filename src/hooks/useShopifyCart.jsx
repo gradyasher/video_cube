@@ -153,8 +153,8 @@ export default function useShopifyCart() {
 
     const finalId = id || cartId || storedId;
     if (!finalId) {
-      console.warn("🚫 fetchCart called without a valid cart ID");
-      return null;
+      console.log("🧼 no valid cart ID — creating new cart via fetchCart()");
+      return await createCart(); // this sets state and returns new cart
     }
 
     try {
