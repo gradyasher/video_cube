@@ -62,7 +62,7 @@ export default function App() {
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
       <HandClickHint show={showMain && !hasClickedCube} />
-      <HamburgerMenu />
+      {showMain && <HamburgerMenu />}
       <TitleOverlay text="Dgenr8."/>
       <MainScene
         onFaceClick={(index) => {
