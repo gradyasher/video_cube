@@ -20,7 +20,7 @@ const minWidth = `${longestReward.length * approxCharWidth}px`;
 
 const submitEmail = async () => {
   if (!/\S+@\S+\.\S+/.test(email)) {
-    alert("Please enter a valid email.");
+    alert("please enter a valid email");
     return;
   }
 
@@ -33,17 +33,17 @@ const submitEmail = async () => {
       body: JSON.stringify({ email }),
     });
 
-    const data = await res.json();
-    console.log("📨 Mailchimp response:", data);
+    const result = await res.json();
 
-    if (res.ok) {
-      setEmailSubmitted(true);
-    } else {
-      alert("Subscription failed: " + data.message);
+    if (!res.ok) {
+      throw new Error(result.error || "subscription failed");
     }
+
+    console.log("✅ email submitted to Mailchimp:", email);
+    setEmailSubmitted(true);
   } catch (err) {
-    console.error("Network error:", err);
-    alert("Something went wrong. Try again later.");
+    console.error("❌ submission error:", err);
+    alert("Something went wrong while subscribing.");
   }
 };
 
