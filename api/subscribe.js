@@ -27,6 +27,12 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
+    // ✅ Handle "already subscribed" gracefully
+    if (result.title === "Member Exists") {
+      console.log("👻 Already subscribed:", email);
+      return res.status(200).json({ message: "Already subscribed" });
+    }
+
     if (response.status === 200 || response.status === 201) {
       return res.status(200).json({ message: "Subscribed successfully!" });
     } else {
