@@ -35,16 +35,26 @@ export default function App() {
   useEffect(() => {
     const listener = (event) => {
       if (event.data === "video-closed") {
+        if (localStorage.getItem("hasSeenMystery") === "true") return;
+
         setVideosWatched((prev) => {
           const updated = prev + 1;
           localStorage.setItem("videosWatched", updated.toString());
+
+          if (updated >= 2) {
+            localStorage.setItem("hasSeenMystery", "true");
+            window.location.href = "/mystery";
+          }
+
           return updated;
         });
       }
     };
+
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
   }, []);
+
 
 
   useEffect(() => {
