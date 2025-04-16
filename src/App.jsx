@@ -46,20 +46,18 @@ export default function App() {
     return () => window.removeEventListener("message", listener);
   }, []);
 
+  useEffect(() => {
+    if (videosWatched >= 2 && !hasSeenMystery && location.pathname === "/") {
+      setHasSeenMystery(true);
+      localStorage.setItem("hasSeenMystery", "true");
+      window.location.href = "/mystery";
+    }
+  }, [videosWatched, hasSeenMystery, location.pathname]);
+
 
 
   return (
     <>
-      {/* 🎁 show mystery reward after 2 videos */}
-      {videosWatched >= 2 && !hasSeenMystery && (
-        <MysteryRewardPage
-          onClose={() => {
-            setHasSeenMystery(true);
-            localStorage.setItem("hasSeenMystery", "true");
-          }}
-        />
-      )}
-
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
