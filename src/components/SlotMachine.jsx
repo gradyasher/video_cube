@@ -41,19 +41,24 @@ export default function SlotMachine({ onFinish }) {
         body: JSON.stringify({ email }),
       });
 
-      const result = await res.json();
+      let result = {};
+      try {
+        result = await res.json(); // might fail if no JSON returned
+      } catch (_) {}
 
       if (!res.ok) {
-        throw new Error(result.error || "subscription failed");
+        const errorMsg = result?.error || result?.message || "subscription failed";
+        throw new Error(errorMsg);
       }
 
       console.log("✅ email submitted to Mailchimp:", email);
       setEmailSubmitted(true);
     } catch (err) {
-      console.error("❌ submission error:", err);
+      console.error("❌ submission error:", err.message || err);
       alert("Something went wrong while subscribing.");
     }
   };
+
 
   useEffect(() => {
     let interval;
@@ -300,7 +305,7 @@ export default function SlotMachine({ onFinish }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                onClick={submitEmail}
+                onClick={startSpin}
                 disabled={spinning}
                 style={{
                   fontSize: "1rem",
