@@ -87,15 +87,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  useEffect(() => {
-    if (videosWatched >= 2 && !hasSeenMystery && location.pathname === "/") {
-      setHasSeenMystery(true);
-      localStorage.setItem("hasSeenMystery", "true");
-      navigate("/mystery"); // ✅ use navigate instead of window.location.href
-    }
-  }, [videosWatched, hasSeenMystery, location.pathname]);
-
-
 
   return (
     <>
