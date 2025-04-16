@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from 'canvas-confetti';
+import { useNavigate } from "react-router-dom";
+
 
 
 const rewardPool = [
@@ -19,6 +21,7 @@ const approxCharWidth = 20; // monospace, estimate ~20px per character
 const minWidth = `${longestReward.length * approxCharWidth}px`;
 
 export default function SlotMachine({ onFinish }) {
+  const navigate = useNavigate();
   const [spinning, setSpinning] = useState(false);
   const [displayed, setDisplayed] = useState("?");
   const [finalReward, setFinalReward] = useState(null);
@@ -53,6 +56,9 @@ export default function SlotMachine({ onFinish }) {
 
       if (result.alreadyClaimed) {
         setAlreadyClaimed(true);
+        setTimeout(() => {
+          navigate("/"); // ← smooth react-native style transition
+        }, 3000); // optional delay
         return;
       }
 
@@ -164,25 +170,25 @@ export default function SlotMachine({ onFinish }) {
             >
               congratulations! you've been selected to receive one of the following gifts:
             </motion.p>
-            <ul style={{
-              marginTop: "0rem",
-              fontFamily: "monospace",
-              fontSize: "1rem",
-              color: "#ccc",
-              textAlign: "center",
-              listStyle: "none",
-              padding: 0,
-              lineHeight: "1.8",
-            }}>
-              {rewardPool.map((reward, idx) => (
-                <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
-                  • {reward}
-                </li>
-              ))}
-            </ul>
 
             {!emailSubmitted && (
               <div style={{ marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+                <ul style={{
+                  marginTop: "0rem",
+                  fontFamily: "monospace",
+                  fontSize: "1rem",
+                  color: "#ccc",
+                  textAlign: "center",
+                  listStyle: "none",
+                  padding: 0,
+                  lineHeight: "1.8",
+                }}>
+                  {rewardPool.map((reward, idx) => (
+                    <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
+                      • {reward}
+                    </li>
+                  ))}
+                </ul>
                 <input
                   type="email"
                   placeholder="enter your email"
@@ -289,44 +295,6 @@ export default function SlotMachine({ onFinish }) {
 
                     </AnimatePresence>
                   </div>
-
-                  {!emailSubmitted && (
-                    <>
-                      <ul style={{
-                        marginTop: "2rem",
-                        fontFamily: "monospace",
-                        fontSize: "1rem",
-                        color: "#ccc",
-                        textAlign: "center",
-                        listStyle: "none",
-                        padding: 0,
-                        lineHeight: "1.8",
-                      }}>
-                        {rewardPool.map((reward, idx) => (
-                          <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
-                            • {reward}
-                          </li>
-                        ))}
-                      </ul>
-
-                      <input
-                        type="email"
-                        placeholder="enter your email to spin"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        style={{
-                          padding: "0.75rem 1rem",
-                          borderRadius: "1rem",
-                          border: "none",
-                          marginBottom: "1rem",
-                          fontSize: "1rem",
-                          width: "100%",
-                          maxWidth: "400px",
-                          textAlign: "center",
-                        }}
-                      />
-                    </>
-                  )}
 
                   {!finalReward && (
                     <motion.button
