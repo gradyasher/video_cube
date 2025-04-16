@@ -195,6 +195,7 @@ export default function CatalogPage({ openCart }) {
             >
               shop.
             </motion.h1>
+
             <Catalog shopifyProducts={shopifyProducts} />
           </div>
         </motion.div>
