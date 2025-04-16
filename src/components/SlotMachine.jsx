@@ -61,35 +61,40 @@ export default function SlotMachine({ onFinish }) {
 
 
   useEffect(() => {
-    const final = rewardPool[Math.floor(Math.random() * rewardPool.length)];
+    let interval;
 
-    setSpinning(true);
-    setDisplayed("...");
-    setFinalReward(null);
+    if (spinning) {
+      const final = rewardPool[Math.floor(Math.random() * rewardPool.length)];
 
-    let ticks = 0;
-    const interval = setInterval(() => {
-      const randomReward = rewardPool[Math.floor(Math.random() * rewardPool.length)];
-      setDisplayed(randomReward);
-      setAnimationKey(Math.random());
-      ticks++;
+      setSpinning(true);
+      setDisplayed("...");
+      setFinalReward(null);
 
-      if (ticks > 80) {
-        clearInterval(interval);
-        setDisplayed(final);
-        setFinalReward(final);
-        onFinish(final); // <- send the same reward everywhere
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#CCFF00', '#00fff7', '#ffffff'],
-        });
-      }
-    }, 40);
+      let ticks = 0;
+      interval = setInterval(() => {
+        const randomReward = rewardPool[Math.floor(Math.random() * rewardPool.length)];
+        setDisplayed(randomReward);
+        setAnimationKey(Math.random());
+        ticks++;
+
+        if (ticks > 80) {
+          clearInterval(interval);
+          setDisplayed(final);
+          setFinalReward(final);
+          onFinish(final);
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#CCFF00', '#00fff7', '#ffffff'],
+          });
+        }
+      }, 40);
     }
+
     return () => clearInterval(interval);
   }, [spinning]);
+
 
   const startSpin = () => {
     setSpinning(true);
