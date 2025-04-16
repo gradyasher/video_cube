@@ -147,7 +147,7 @@ export default function SlotMachine({ onFinish }) {
             maxWidth: "420px",
             textAlign: "center",
           }}>
-            you've already claimed your mystery reward. thank you!
+            you've already claimed your mystery reward. for more free stuff join us on Discord!
           </p>
         ) : (
           <>
