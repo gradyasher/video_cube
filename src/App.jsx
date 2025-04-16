@@ -62,6 +62,27 @@ export default function App() {
       }
     };
 
+    useEffect(() => {
+      const handler = (e) => {
+        const isMac = navigator.platform.toUpperCase().includes('MAC');
+        const isResetCombo =
+          (isMac && e.metaKey && e.shiftKey && e.key === 'R') ||
+          (!isMac && e.ctrlKey && e.shiftKey && e.key === 'R');
+
+        if (isResetCombo) {
+          localStorage.removeItem("videosWatched");
+          localStorage.removeItem("hasSeenMystery");
+          localStorage.removeItem("email");
+          alert("🔁 local gating flags cleared!");
+          window.location.reload();
+        }
+      };
+
+      window.addEventListener("keydown", handler);
+      return () => window.removeEventListener("keydown", handler);
+    }, []);
+
+
   window.addEventListener("message", listener);
   return () => window.removeEventListener("message", listener);
 }, [hasSeenMystery]);
