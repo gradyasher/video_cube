@@ -33,17 +33,28 @@ export default function App() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const listener = (event) => {
+    const listener = async (event) => {
       if (event.data === "video-closed") {
-        if (localStorage.getItem("hasSeenMystery") === "true") return;
-
         setVideosWatched((prev) => {
           const updated = prev + 1;
           localStorage.setItem("videosWatched", updated.toString());
 
-          if (updated >= 2) {
-            localStorage.setItem("hasSeenMystery", "true");
-            window.location.href = "/mystery";
+          // ✅ check server before redirecting
+          if (updated >= 2 && !hasSeenMystery) {
+            fetch("/api/check-claimed", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: localStorage.getItem("email") }), // if you're tracking email in localStorage
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (!data.alreadyClaimed) {
+                  localStorage.setItem("hasSeenMystery", "true");
+                  navigate("/mystery");
+                } else {
+                  console.log("🎁 reward already claimed — no redirect");
+                }
+              });
           }
 
           return updated;
@@ -51,20 +62,9 @@ export default function App() {
       }
     };
 
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
-
-
-
-  useEffect(() => {
-    if (videosWatched >= 2 && !hasSeenMystery && location.pathname === "/") {
-      setHasSeenMystery(true);
-      localStorage.setItem("hasSeenMystery", "true");
-      window.location.href = "/mystery";
-    }
-  }, [videosWatched, hasSeenMystery, location.pathname]);
-
+  window.addEventListener("message", listener);
+  return () => window.removeEventListener("message", listener);
+}, [hasSeenMystery]);
 
 
   return (
