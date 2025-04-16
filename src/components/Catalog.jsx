@@ -10,7 +10,13 @@ export default function Catalog() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const variantIds = Object.values(variantMap).map((item) => `"${item.variantId}"`);
+      const variantIds = Object.values(variantMap)
+        .map((item) => {
+          const firstAvailableId = Object.values(item.variants)[0]; // pick first available variant
+          return `"${firstAvailableId}"`;
+        })
+        .filter(Boolean);
+
       const query = `
         {
           nodes(ids: [${variantIds.join(",")}]) {
@@ -30,10 +36,11 @@ export default function Catalog() {
       `;
 
       try {
-        const data = await shopifyFetch(query);
+        const data = await shopifyFetch(query); // ✅ fetch data
         const productData = data.nodes.map((variant) => {
           const modelEntry = Object.entries(variantMap).find(
-            ([, val]) => val.variantId === variant.id
+            ([, val]) =>
+              Object.values(val.variants).includes(variant.id)
           );
 
           const modelPath = modelEntry?.[0];
@@ -47,6 +54,7 @@ export default function Catalog() {
             image,
           };
         });
+
 
         setProducts(productData);
       } catch (err) {
