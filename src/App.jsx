@@ -14,9 +14,14 @@ import { AnimatePresence } from "framer-motion";
 export default function App() {
   const location = useLocation();
   const isShopPage = location.pathname === "/shop" || location.pathname.startsWith("/shop/view");
-
-  // 🔁 add state to control cart visibility
   const [cartOpen, setCartOpen] = useState(false);
+  const [videosWatched, setVideosWatched] = useState(() => {
+    return parseInt(localStorage.getItem("videosWatched") || "0", 10);
+  });
+  const [hasSeenMystery, setHasSeenMystery] = useState(() => {
+    return localStorage.getItem("hasSeenMystery") === "true";
+  });
+
 
   useEffect(() => {
   }, [cartOpen]);
@@ -27,10 +32,34 @@ export default function App() {
     }
   }, [location.pathname]);
 
+  useEffect(() => {
+    const listener = (event) => {
+      if (event.data === "video-playing") {
+        setVideosWatched((prev) => {
+          const updated = prev + 1;
+          localStorage.setItem("videosWatched", updated.toString());
+          return updated;
+        });
+      }
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+
 
 
   return (
     <>
+      {/* 🎁 show mystery reward after 2 videos */}
+      {videosWatched >= 2 && !hasSeenMystery && (
+        <MysteryRewardPage
+          onClose={() => {
+            setHasSeenMystery(true);
+            localStorage.setItem("hasSeenMystery", "true");
+          }}
+        />
+      )}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
@@ -41,7 +70,7 @@ export default function App() {
           path="/shop/view"
           element={<ProductPage openCart={() => setCartOpen(true)} />}
         />
-        <Route path="/checkout" element={<CheckoutPage />} /> {/* 👈 add this */}
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/shop/upsell" element={<UpsellPage />} />
         <Route path="/mystery" element={<MysteryRewardPage />} />
       </Routes>
@@ -59,4 +88,5 @@ export default function App() {
       )}
     </>
   );
+
 }
