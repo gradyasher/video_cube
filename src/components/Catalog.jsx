@@ -99,11 +99,32 @@ export default function Catalog() {
             onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
             onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
-            <img
-              src={product.image}
-              alt={product.name}
-              style={{ width: "100%", height: "auto", marginBottom: "1rem" }}
-            />
+            <div
+              style={{
+                width: "100%",
+                aspectRatio: "1 / 1",
+                position: "relative",
+                marginBottom: "1rem",
+                backgroundColor: "#111", // placeholder color
+                borderRadius: "0.5rem",
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={product.image}
+                alt={product.name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  transition: "opacity 0.3s ease-in-out",
+                  opacity: 1, // you can make this conditional if doing fade-ins
+                }}
+              />
+            </div>
             <p style={{ color: "#CCDE01", fontSize: "1.1rem" }}>{product.name}</p>
             <p style={{ color: "#ccc", fontSize: "0.9rem" }}>{product.price}</p>
           </motion.div>
