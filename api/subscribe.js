@@ -4,14 +4,10 @@ export default async function handler(req, res) {
   }
 
   const { email } = req.body;
-  const API_KEY = process.env.MAILCHIMP_API_KEY;
-  const AUDIENCE_ID = process.env.MAILCHIMP_AUDIENCE_ID;
-
-  if (!API_KEY || !AUDIENCE_ID) {
-    return res.status(500).json({ error: "missing env vars" });
-  }
-
+  const API_KEY = process.env.VITE_MAILCHIMP_API_KEY;
+  const AUDIENCE_ID = "e119572dab";
   const DATACENTER = API_KEY.split("-")[1];
+
   const url = `https://${DATACENTER}.api.mailchimp.com/3.0/lists/${AUDIENCE_ID}/members`;
 
   const data = {
@@ -31,14 +27,14 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
-    if (response.status >= 200 && response.status < 300) {
-      return res.status(200).json({ message: "subscribed!" });
+    if (response.status === 200 || response.status === 201) {
+      return res.status(200).json({ message: "Subscribed successfully!" });
     } else {
       console.error("Mailchimp error:", result);
-      return res.status(400).json({ message: "subscription failed", error: result });
+      return res.status(400).json({ message: "Subscription failed", error: result });
     }
   } catch (err) {
-    console.error("request error:", err);
-    return res.status(500).json({ message: "server error", error: err.message });
+    console.error("Mailchimp crash:", err);
+    return res.status(500).json({ message: "Internal error", error: err.message });
   }
 }
