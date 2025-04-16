@@ -88,7 +88,9 @@ export const vhsShader = {
       vec3 color = vec3(red,green,blue);
       float scanline = sin(uv.y*800.0)*0.04*scalinesOpt;
       color -= scanline;
-      gl_FragColor = vec4(color, 0.5);
+      vec3 greyTint = vec3(0.5); // or try vec3(0.6), vec3(0.4) for variation
+      color = mix(color, greyTint, 0.4); // 0.0 = original color, 1.0 = fully gray
+      gl_FragColor = vec4(color, 0.17);
     }
   `
 };

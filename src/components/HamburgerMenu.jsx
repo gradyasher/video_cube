@@ -9,9 +9,7 @@ const menuItems = [
   { src: "/assets/s t r e a m_processed.png", link: null },
 ];
 
-export default function HamburgerMenu() {
-  const [isOpen, setIsOpen] = useState(false);
-
+export default function HamburgerMenu({ isOpen, setIsOpen }) {
   const toggleMenu = () => setIsOpen((prev) => !prev);
 
   return (

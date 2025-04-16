@@ -7,6 +7,7 @@ import UpsellPage from "./pages/UpsellPage";
 import PopoutCart from "./components/PopoutCart";
 import CheckoutPage from "./pages/CheckoutPage";
 import MysteryRewardPage from "./pages/MysteryRewardPage";
+import GlitchReading from "./pages/GlitchReading";
 import { AnimatePresence } from "framer-motion";
 
 
@@ -103,6 +104,7 @@ export default function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/shop/upsell" element={<UpsellPage />} />
         <Route path="/mystery" element={<MysteryRewardPage />} />
+        <Route path="/glitch-reading" element={<GlitchReading />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (

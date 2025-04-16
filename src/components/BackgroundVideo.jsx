@@ -41,8 +41,8 @@ export default function BackgroundVideo({ onReady, scale = 1 }) {
 
   if (!texture) return null;
 
-  const width = 35 * scale;
-  const height = 25 * scale;
+  const width = 100 * scale;
+  const height = 30 * scale;
 
   return (
     <Plane args={[width, height]} position={[0, 0, -5]} renderOrder={-1}>
@@ -51,7 +51,7 @@ export default function BackgroundVideo({ onReady, scale = 1 }) {
         fragmentShader={backgroundShader.fragmentShader}
         uniforms={{
           map: { value: texture },
-          warpAmount: { value: 2.5 },
+          warpAmount: { value: 1.5 },
         }}
         transparent={false}
       />
