@@ -336,6 +336,7 @@ export default function SlotMachine({ onFinish }) {
                 {spinning ? "spinning..." : "reveal my reward →"}
               </motion.button>
 
+
               {finalReward && (
                 <p style={{ marginTop: "1.25rem", color: "#fff", fontSize: "0.9rem" }}>
                   you received: <strong>{finalReward}</strong>
