@@ -21,7 +21,7 @@ export const backgroundShader = {
         discard;
       }
 
-      gl_FragColor = texture2D(map, uv);
+      gl_FragColor = vec4(texture2D(map, uv).rgb * 0.5, 1.0);
     }
   `
 };

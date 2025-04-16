@@ -15,7 +15,7 @@ export default function VHSShaderMaterial() {
   });
 
   return (
-    <Plane args={[15, 10]} position={[0, 0, 0.01]} renderOrder={Infinity}>
+    <Plane args={[20, 10]} position={[0, 0, 0.01]} renderOrder={Infinity}>
       <shaderMaterial
         ref={shaderRef}
         attach="material"

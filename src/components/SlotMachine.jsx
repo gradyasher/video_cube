@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from 'canvas-confetti';
 import { useNavigate } from "react-router-dom";
 
-
-
 const rewardPool = [
   "free sticker pack",
   "unreleased track",
