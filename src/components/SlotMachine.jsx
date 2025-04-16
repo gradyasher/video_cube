@@ -175,13 +175,19 @@ export default function SlotMachine({ onFinish }) {
             />
             <button
               onClick={() => {
-                if (/\S+@\S+\.\S+/.test(email)) {
-                  setEmailSubmitted(true);
-                  console.log("📨 collected email:", email);
-                } else {
-                  alert("please enter a valid email");
+                if (!emailSubmitted) {
+                  if (/\S+@\S+\.\S+/.test(email)) {
+                    setEmailSubmitted(true);
+                    submitEmail(); // <- make sure this is async
+                  } else {
+                    alert("please enter a valid email");
+                  }
+                  return;
                 }
+
+                startSpin(); // this should run only after emailSubmitted is true
               }}
+
               style={{
                 background: "#ccff00",
                 color: "#000",
