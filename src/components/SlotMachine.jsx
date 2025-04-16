@@ -313,28 +313,31 @@ export default function SlotMachine({ onFinish }) {
                 </>
               )}
 
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                onClick={startSpin}
-                disabled={spinning}
-                style={{
-                  fontSize: "1rem",
-                  padding: "0.75rem 1.5rem",
-                  background: "#00fff7",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "1rem",
-                  fontWeight: "bold",
-                  cursor: spinning ? "not-allowed" : "pointer",
-                  boxShadow: "0 0 10px #00fff7",
-                  maxWidth: "90vw",
-                  marginInline: "auto"
-                }}
-              >
-                {spinning ? "spinning..." : "reveal my reward →"}
-              </motion.button>
+              {!finalReward && (
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  onClick={startSpin}
+                  disabled={spinning}
+                  style={{
+                    fontSize: "1rem",
+                    padding: "0.75rem 1.5rem",
+                    background: "#00fff7",
+                    color: "#000",
+                    border: "none",
+                    borderRadius: "1rem",
+                    fontWeight: "bold",
+                    cursor: spinning ? "not-allowed" : "pointer",
+                    boxShadow: "0 0 10px #00fff7",
+                    maxWidth: "90vw",
+                    marginInline: "auto"
+                  }}
+                >
+                  {spinning ? "spinning..." : "reveal my reward →"}
+                </motion.button>
+              )}
+
 
 
               {finalReward && (
