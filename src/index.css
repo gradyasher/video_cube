@@ -61,6 +61,15 @@ button:focus-visible {
   transform: scale(1.05) rotate(-2deg);
 }
 
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

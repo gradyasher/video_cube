@@ -7,7 +7,7 @@ import VHSShaderMaterial from "../components/VHSShaderMaterial";
 import VolumetricScattering from "../components/VolumetricScattering";
 import BackgroundVideo from "../components/BackgroundVideo";
 import { hostedVideoLinks } from "../constants/videoSources";
-import GlitchReadingScene from "../components/GlitchReadingScene";
+import GlitchReadingContents from "../components/GlitchReadingContents";
 import LoadingScreen from "../components/LoadingScreen";
 import HamburgerMenu from "../components/HamburgerMenu";
 import SoundbathLogo from "../components/SoundbathLogo";
@@ -25,10 +25,12 @@ export default function GlitchReading() {
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
       <TitleOverlay text="the sphere has chosen."/>
-      <GlitchReadingScene
-        onSphereReady={() => setSphereReady(true)}
-        onBgReady={() => setBgReady(true)}
-      />
+      <Canvas camera={{ position: [0, 0, 6.5] }} fog={{ color: '#000000', near: 2, far: 12 }}>
+        <GlitchReadingContents
+          onSphereReady={() => setSphereReady(true)}
+          onBgReady={() => setBgReady(true)}
+        />
+      </ Canvas>
       <SoundbathLogo />
       <MusicPlayer />
       {showMain && (
