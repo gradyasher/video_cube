@@ -21,6 +21,7 @@
     "canvas": "^3.1.0",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^12.6.2",
+    "html2canvas": "^1.4.1",
     "postprocessing": "^6.37.1",
     "puppeteer": "^24.6.0",
     "react": "^19.0.0",

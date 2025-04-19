@@ -1,102 +1,151 @@
-// GlitchReadingCapture.jsx
 import React, { useEffect, useRef, useState, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useLoader } from "@react-three/fiber";
+import { TextureLoader } from "three";
+import { Text, Image } from "@react-three/drei";
 import GlitchReadingContents from "../components/GlitchReadingContents";
 import TitleOverlay from "../components/TitleOverlay";
 import SoundbathLogo from "../components/SoundbathLogo";
 import MusicPlayer from "../components/MusicPlayer";
 
-const CCapture = window.CCapture;
+function Gongboi({ url }) {
+  return (
+    <Image
+      url={url}
+      scale={[2, 2, 1]}         // tweak scale to your liking
+      position={[0, -1.9, 3]}        // place in front of sphere
+      transparent
+    />
+  );
+}
+
 
 export default function GlitchReadingCapture() {
-  const containerRef = useRef(null);
-  const capturerRef = useRef(null);
+  const containerRef = useRef();
   const [capturing, setCapturing] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!capturing) return;
 
-    const canvas = containerRef.current.querySelector("canvas");
-    if (!canvas) return;
-
-    const capturer = new CCapture({ format: "webm", framerate: 60 });
-    capturerRef.current = capturer;
-
-    let frame = 0;
-    const maxFrames = 60 * 5; // 5 seconds at 60fps
-
-    function capture() {
-      if (!capturing) return;
-
-      // capture entire container (Canvas + overlays)
-      capturer.capture(containerRef.current);
-      frame++;
-
-      if (frame < maxFrames) {
-        requestAnimationFrame(capture);
-      } else {
-        capturer.stop();
-        capturer.save();
-      }
+    const container = containerRef.current;
+    if (!container) {
+      console.warn("🚨 container is null!");
+      return;
     }
 
-    // delay capture until everything has rendered
-    const timeout = setTimeout(() => {
-      requestAnimationFrame(() => {
-        setCapturing(true);
-        capturer.start();
-        requestAnimationFrame(capture);
-      });
-    }, 1500); // give DOM + scene time to paint
+    const canvas = container.querySelector("canvas");
+    if (!canvas) {
+      console.warn("🚨 canvas is null!");
+      return;
+    }
 
-    return () => clearTimeout(timeout);
+    const stream = canvas.captureStream(60); // 60fps stream
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: "video/webm; codecs=vp9",
+    });
+
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "glitch-reading.webm";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      console.log("✅ Download triggered");
+
+      setShowOverlay(true); // bring back overlays
+    };
+
+    console.log("🎬 Starting MediaRecorder...");
+    mediaRecorder.start();
+
+    // 🔁 Delay hiding overlay for 1 animation frame after capture starts
+    requestAnimationFrame(() => {
+      console.log("🙈 Hiding overlay post-canvas commit");
+      setShowOverlay(false);
+    });
+
+    const stopDelay = setTimeout(() => {
+      console.log("🛑 Stopping MediaRecorder...");
+      mediaRecorder.stop();
+    }, 2000); // 2 seconds
+
+    return () => clearTimeout(stopDelay);
   }, [capturing]);
+
 
   return (
     <div
-      ref={containerRef}
       style={{
-        width: 720,
-        height: 720,
-        position: "relative",
-        overflow: "hidden",
+        width: "100vw",
+        height: "100vh",
         background: "black",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {/* 3D Scene */}
-      <Canvas
-        orthographic={false}
-        camera={{ position: [0, 0, 6.5], fov: 75 }}
-        gl={{ preserveDrawingBuffer: true }}
-        fog={{ color: "#000000", near: 2, far: 12 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <Suspense fallback={null}>
-          <GlitchReadingContents onSphereReady={() => setCapturing(true)} />
-        </Suspense>
-      </Canvas>
-
-      {/* Overlay Text + Branding */}
       <div
+        ref={containerRef}
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 10,
-          pointerEvents: "none",
+          width: 720,
+          height: 720,
+          position: "relative",
+          overflow: "hidden",
+          background: "black",
         }}
       >
-        <TitleOverlay text="the sphere has chosen." />
-        <SoundbathLogo />
-        <MusicPlayer />
+        <Canvas
+          onCreated={({ gl }) => {
+            const canvas = gl.domElement;
+            canvas.style.position = "absolute";
+            canvas.style.top = "0";
+            canvas.style.left = "0";
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+          }}
+          orthographic={false}
+          camera={{ position: [0, 0, 6.5], fov: 75 }}
+          gl={{ preserveDrawingBuffer: true }}
+          fog={{ color: "#000000", near: 2, far: 12 }}
+        >
+          <Suspense fallback={null}>
+            <GlitchReadingContents
+              onSphereReady={() => {
+                console.log("🟢 Sphere ready, scheduling capture...");
+                setTimeout(() => {
+                  console.log("✅ Capture triggered");
+                  setCapturing(true);
+                }, 1000);
+              }}
+            />
+            <Text
+              position={[0, 1.8, 2]}
+              fontSize={1.1}
+              color="#ccff66"
+              anchorX="center"
+              anchorY="middle"
+              textAlign="center"
+              letterSpacing={-0.13}
+              font="/fonts/ArialMT.woff" // or whatever your custom font is
+              material-toneMapped={false}
+            >
+              the sphere has{"\n"}chosen.
+            </Text>
+            <Gongboi url="/assets/soundbath.png" />
+
+          </Suspense>
+
+        </Canvas>
       </div>
     </div>
   );
