@@ -1,90 +1,76 @@
 import React, { useEffect, useRef, useState, Suspense } from "react";
-import { Canvas, useLoader } from "@react-three/fiber";
-import { TextureLoader } from "three";
-import { Text, Image } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
 import GlitchReadingContents from "../components/GlitchReadingContents";
-import TitleOverlay from "../components/TitleOverlay";
-import SoundbathLogo from "../components/SoundbathLogo";
-import MusicPlayer from "../components/MusicPlayer";
-
-function Gongboi({ url }) {
-  return (
-    <Image
-      url={url}
-      scale={[2, 2, 1]}         // tweak scale to your liking
-      position={[0, -1.9, 3]}        // place in front of sphere
-      transparent
-    />
-  );
-}
-
+import { Text } from "@react-three/drei";
 
 export default function GlitchReadingCapture() {
   const containerRef = useRef();
   const [capturing, setCapturing] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
 
   useEffect(() => {
     if (!capturing) return;
 
     const container = containerRef.current;
-    if (!container) {
-      console.warn("🚨 container is null!");
-      return;
-    }
-
     const canvas = container.querySelector("canvas");
-    if (!canvas) {
-      console.warn("🚨 canvas is null!");
-      return;
-    }
+    if (!canvas) return console.warn("🚨 Canvas not found");
 
-    const stream = canvas.captureStream(60); // 60fps stream
-    const mediaRecorder = new MediaRecorder(stream, {
+    const stream = canvas.captureStream(60);
+    const recorder = new MediaRecorder(stream, {
       mimeType: "video/webm; codecs=vp9",
     });
 
     const chunks = [];
-
-    mediaRecorder.ondataavailable = (e) => {
+    recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunks.push(e.data);
     };
 
-    mediaRecorder.onstop = () => {
+    recorder.onstop = async () => {
       const blob = new Blob(chunks, { type: "video/webm" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = "glitch-reading.webm";
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(url);
-      console.log("✅ Download triggered");
+      const file = new File([blob], "glitch-reading.webm");
 
-      setShowOverlay(true); // bring back overlays
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("http://localhost:3001/api/process-glitch-video", {
+          method: "POST",
+          body: formData,
+        });
+
+
+        // 🧠 Check response type before parsing JSON
+        const contentType = res.headers.get("content-type") || "";
+
+        if (!res.ok) {
+          const text = await res.text(); // get full error body if any
+          throw new Error(`Upload failed with status ${res.status}: ${text}`);
+        }
+
+        if (!contentType.includes("application/json")) {
+          throw new Error("❌ Expected JSON but got: " + contentType);
+        }
+
+        const { url } = await res.json();
+        console.log("✅ Final video available at:", url);
+        // 🪄 add share UI here
+
+      } catch (err) {
+        console.error("❌ Upload failed:", err.message || err);
+      }
     };
 
-    console.log("🎬 Starting MediaRecorder...");
-    mediaRecorder.start();
 
-    // 🔁 Delay hiding overlay for 1 animation frame after capture starts
-    requestAnimationFrame(() => {
-      console.log("🙈 Hiding overlay post-canvas commit");
-      setShowOverlay(false);
-    });
+    recorder.start();
 
-    const stopDelay = setTimeout(() => {
-      console.log("🛑 Stopping MediaRecorder...");
-      mediaRecorder.stop();
+    setTimeout(() => {
+      recorder.stop();
     }, 2000); // 2 seconds
 
-    return () => clearTimeout(stopDelay);
   }, [capturing]);
-
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: "100vw",
         height: "100vh",
@@ -95,37 +81,28 @@ export default function GlitchReadingCapture() {
       }}
     >
       <div
-        ref={containerRef}
         style={{
           width: 720,
           height: 720,
           position: "relative",
-          overflow: "hidden",
-          background: "black",
         }}
       >
         <Canvas
           onCreated={({ gl }) => {
-            const canvas = gl.domElement;
-            canvas.style.position = "absolute";
-            canvas.style.top = "0";
-            canvas.style.left = "0";
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
+            gl.domElement.style.position = "absolute";
+            gl.domElement.style.top = "0";
+            gl.domElement.style.left = "0";
+            gl.domElement.style.width = "100%";
+            gl.domElement.style.height = "100%";
           }}
-          orthographic={false}
           camera={{ position: [0, 0, 6.5], fov: 75 }}
           gl={{ preserveDrawingBuffer: true }}
-          fog={{ color: "#000000", near: 2, far: 12 }}
         >
           <Suspense fallback={null}>
             <GlitchReadingContents
               onSphereReady={() => {
-                console.log("🟢 Sphere ready, scheduling capture...");
-                setTimeout(() => {
-                  console.log("✅ Capture triggered");
-                  setCapturing(true);
-                }, 1000);
+                console.log("🟢 Sphere ready. Starting capture...");
+                setTimeout(() => setCapturing(true), 1000);
               }}
             />
             <Text
@@ -136,15 +113,12 @@ export default function GlitchReadingCapture() {
               anchorY="middle"
               textAlign="center"
               letterSpacing={-0.13}
-              font="/fonts/ArialMT.woff" // or whatever your custom font is
+              font="/fonts/ArialMT.woff"
               material-toneMapped={false}
             >
               the sphere has{"\n"}chosen.
             </Text>
-            <Gongboi url="/assets/soundbath.png" />
-
           </Suspense>
-
         </Canvas>
       </div>
     </div>
