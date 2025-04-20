@@ -1,59 +1,34 @@
-// pages/api/process-glitch-video.js
-import formidable from "formidable";
+// api/process-glitch-video.js
+import express from "express";
+import multer from "multer";
+import path from "path";
 import fs from "fs";
 import { exec } from "child_process";
-import path from "path";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+const router = express.Router();
+const upload = multer({ dest: "uploads/" });
 
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+router.post("/", upload.single("file"), (req, res) => {
+  console.log("📩 [Router] Received POST /api/process-glitch-video");
+
+  const inputPath = req.file.path;
+  const overlayPath = path.resolve("public/assets/glitch-reading-overlay.png");
+  const outputFilename = `glitch-${Date.now()}.mp4`;
+  const outputPath = path.resolve("public/generated", outputFilename);
+
+  if (!fs.existsSync("public/generated")) fs.mkdirSync("public/generated");
+
+  const cmd = `ffmpeg -y -i ${inputPath} -i ${overlayPath} -filter_complex "overlay=0:0" -c:v libx264 -pix_fmt yuv420p ${outputPath}`;
+
+  exec(cmd, (err, stdout, stderr) => {
+    if (err) {
+      console.error("🛑 FFmpeg error:", stderr);
+      return res.status(500).json({ error: "FFmpeg failed" });
     }
 
-    const form = formidable({ multiples: false });
+    console.log("✅ MP4 saved:", outputPath);
+    res.json({ url: `/generated/${outputFilename}` });
+  });
+});
 
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error("❌ Form parse error:", err);
-        return res.status(500).json({ error: "Form parse error" });
-      }
-
-      const uploaded = files.file;
-      const inputPath = uploaded?.filepath;
-      if (!inputPath) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      const outDir = path.join(process.cwd(), "public", "generated");
-      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-
-      const outputFilename = `glitch-reading-${Date.now()}.webm`;
-      const outputPath = path.join(outDir, outputFilename);
-      const overlayPath = path.join(process.cwd(), "public", "assets", "glitch-reading-overlay.png");
-
-      const ffmpegCmd = `ffmpeg -y -i "${inputPath}" -i "${overlayPath}" -filter_complex "overlay=0:0" -c:v libvpx-vp9 "${outputPath}"`;
-
-      console.log("🔧 FFmpeg CMD:", ffmpegCmd);
-
-      exec(ffmpegCmd, (err, stdout, stderr) => {
-        if (err) {
-          console.error("❌ FFmpeg error:", stderr);
-          return res.status(500).json({ error: "FFmpeg failed" });
-        }
-
-        const videoUrl = `/generated/${outputFilename}`;
-        console.log("✅ Created:", videoUrl);
-        return res.status(200).json({ url: videoUrl });
-      });
-    });
-  } catch (err) {
-    console.error("❌ Unexpected error:", err);
-    return res.status(500).json({ error: "Unexpected server error" });
-  }
-}
+export default router;
