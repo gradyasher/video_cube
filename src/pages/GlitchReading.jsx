@@ -85,25 +85,34 @@ export default function GlitchReading() {
     try {
       await navigator.share({
         title: "my VHS horoscope",
-        text: "the sphere has chosen. 🌀",
+        text: "The sphere has chosen. 🌀",
         url: `${window.location.origin}${videoUrl}`,
       });
-
-      console.log("✅ Shared successfully");
-      setUserShared(true);
+      console.log("✅ Shared via system menu");
+      setUserShared(true); // prevent deletion
       clearTimeout(deletionTimeoutRef.current);
     } catch (err) {
-      console.warn("❌ Share canceled:", err);
+      console.warn("❌ Share canceled or failed:", err);
     }
   };
+
+  console.log("🔍 showMain:", showMain);
+  console.log("🔍 showSharePrompt:", showSharePrompt);
+  console.log("🔍 showShareOptions:", showShareOptions);
+  console.log("🔍 videoUrl:", videoUrl);
+
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
       <TitleOverlay text="the sphere has chosen." />
+
       <Canvas camera={{ position: [0, 0, 6.5] }} fog={{ color: "#000000", near: 2, far: 12 }}>
         <GlitchReadingContents
-          onSphereReady={() => setSphereReady(true)}
+          onSphereReady={() => {
+            console.log("✅ Sphere ready");
+            setSphereReady(true);
+          }}
           onBgReady={() => setBgReady(true)}
         />
       </Canvas>
@@ -123,30 +132,48 @@ export default function GlitchReading() {
       )}
 
       {showMain && showSharePrompt && !showShareOptions && (
-        <button
-          onClick={() => setShowShareOptions(true)}
-          className="absolute bottom-24 text-lime-300 text-sm hover:underline z-50"
-        >
-          share this reading with your friends
-        </button>
+        <div className="absolute bottom-[10vh] text-lime-300 text-sm hover:underline z-50">
+          <button
+            onClick={() => setShowShareOptions(true)}
+            className="absolute bottom-24 text-lime-300 text-sm hover:underline z-[9999] bg-red-500"
+            style={{ position: "relative", zIndex: 9999 }}
+          >
+            share this reading with your friends
+          </button>
+        </div>
       )}
 
 
 
       {showShareOptions && videoUrl && (
-        <div className="absolute bottom-24 w-full flex flex-col items-center space-y-3">
+        <div className="absolute bottom-24 w-full flex flex-col items-center space-y-4 z-50">
+          {/* IG Share for Mobile */}
           <InstagramShareButton
             videoUrl={window.location.origin + videoUrl}
-            stickerUrl="https://dgenr8.world"
+            stickerUrl="https://dgenr8.world" // customize if you want a branded sticker
           />
-          <button
-            onClick={shareToSystem}
-            className="mt-2 text-sm text-lime-300 underline hover:opacity-80"
+
+          {/* Web Share API */}
+          {navigator.share && (
+            <button
+              onClick={shareToSystem}
+              className="text-sm text-lime-300 underline hover:opacity-80"
+            >
+              or share using your system menu
+            </button>
+          )}
+
+          {/* Fallback Download */}
+          <a
+            href={videoUrl}
+            download
+            className="text-xs underline text-white/70 hover:text-white"
           >
-            or share using your system menu
-          </button>
+            or download the video manually
+          </a>
         </div>
       )}
+
 
     </div>
   );

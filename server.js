@@ -13,6 +13,8 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
 
+
+
 app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
   console.log("📩 Received POST /api/process-glitch-video");
 
