@@ -5,7 +5,7 @@ export default function useCanvasRecorder({ trigger, durationMs = 2000, onComple
   useEffect(() => {
     if (!trigger) return;
 
-    const canvas = document.querySelector("canvas");
+    const canvas = document.querySelector("div[style*='-9999'] canvas");
     if (!canvas) return console.warn("🚨 No canvas found");
 
     const stream = canvas.captureStream(60);

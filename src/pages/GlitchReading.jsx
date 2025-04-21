@@ -8,6 +8,7 @@ import VHSShaderMaterial from "../components/VHSShaderMaterial";
 import VolumetricScattering from "../components/VolumetricScattering";
 import BackgroundVideo from "../components/BackgroundVideo";
 import { hostedVideoLinks } from "../constants/videoSources";
+import { bgVids } from "../constants/videoSources";
 import GlitchReadingContents from "../components/GlitchReadingContents";
 import LoadingScreen from "../components/LoadingScreen";
 import HamburgerMenu from "../components/HamburgerMenu";
@@ -26,17 +27,37 @@ export default function GlitchReading() {
   const [showSharePrompt, setShowSharePrompt] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [userShared, setUserShared] = useState(false);
+  const [recording, setRecording] = useState(true); // show hidden Canvas initially
+  const [recordingComplete, setRecordingComplete] = useState(false);
   const deletionTimeoutRef = useRef(null);
   const showMain = bgReady && sphereReady;
 
+  const [sphereVideoUrl] = useState(() => {
+    const index = Math.floor(Math.random() * hostedVideoLinks.length);
+    return hostedVideoLinks[index];
+  });
+
+  const [bgVideoUrl] = useState(() => {
+    const index = Math.floor(Math.random() * hostedVideoLinks.length);
+    return bgVids[index];
+  });
+
+
   useCanvasRecorder({
     trigger: showMain && !videoUrl, // only start if page is ready and no video yet
-    durationMs: 2000,
+    durationMs: 6000,
     onComplete: (url) => {
       setVideoUrl(url);
       setShowSharePrompt(true);
     },
   });
+
+  useEffect(() => {
+    if (recordingComplete) {
+      setRecording(false); // triggers unmount of hidden Canvas
+    }
+  }, [recordingComplete]);
+
 
   useEffect(() => {
     const checkForVideo = async () => {
@@ -96,12 +117,6 @@ export default function GlitchReading() {
     }
   };
 
-  console.log("🔍 showMain:", showMain);
-  console.log("🔍 showSharePrompt:", showSharePrompt);
-  console.log("🔍 showShareOptions:", showShareOptions);
-  console.log("🔍 videoUrl:", videoUrl);
-
-
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
@@ -109,8 +124,9 @@ export default function GlitchReading() {
 
       <Canvas camera={{ position: [0, 0, 6.5] }} fog={{ color: "#000000", near: 2, far: 12 }}>
         <GlitchReadingContents
+          sphereVideoUrl={sphereVideoUrl}
+          bgVideoUrl={ bgVideoUrl }
           onSphereReady={() => {
-            console.log("✅ Sphere ready");
             setSphereReady(true);
           }}
           onBgReady={() => setBgReady(true)}
@@ -119,62 +135,140 @@ export default function GlitchReading() {
       <SoundbathLogo />
 
       {showMain && (
-        <div className="absolute bottom-10 w-full flex flex-col items-center text-lime-300 text-sm space-y-3">
-          <p>
-            share your reading & tag <span className="underline">@dgenrnation</span> to receive
-            another transmission
+        <div
+          style={{
+            position: "absolute",
+            bottom: "10vh",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            color: "#ccff33", // text-lime-300
+            fontSize: "0.875rem", // text-sm
+            gap: "0.75rem", // Tailwind space-y-3
+            zIndex: 10,
+            pointerEvents: "none",
+          }}
+        >
+          <p style={{
+            fontFamily: 'Helvetica, sans-serif',
+            fontSize: '0.875rem',
+            textAlign: 'center',
+            letterSpacing: '0.03em',
+            color: '#ccff33',
+            textShadow: '0 0 4px #ccff33aa',
+          }}>
+            share your reading & tag <span style={{ textDecoration: "underline" }}>@dgenrnation</span> to receive another transmission
           </p>
-          <p className="text-xs">🎲 Want a second gift? Nominate a friend to spin.</p>
-          <Link to="/" className="hover:underline">
+          <p style={{ fontSize: "0.75rem", pointerEvents: "auto" }}>🎲 Want a second gift? Nominate a friend to spin.</p>
+          <Link to="/" style={{ textDecoration: "underline", pointerEvents: "auto" }}>
             &larr; back to home
           </Link>
         </div>
       )}
 
       {showMain && showSharePrompt && !showShareOptions && (
-        <div className="absolute bottom-[10vh] text-lime-300 text-sm hover:underline z-50">
+        <div
+          style={{
+            position: "absolute",
+            bottom: "15vh",
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            zIndex: 11,
+            pointerEvents: "none",
+          }}
+        >
           <button
             onClick={() => setShowShareOptions(true)}
-            className="absolute bottom-24 text-lime-300 text-sm hover:underline z-[9999] bg-red-500"
-            style={{ position: "relative", zIndex: 9999 }}
+            style={{
+              pointerEvents: "auto",
+              color: "#ccff33",
+              fontSize: "0.875rem",
+              border: "1px solid #ccff33",
+              padding: "0.25rem 0.75rem",
+              borderRadius: "0.25rem",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+            }}
           >
             share this reading with your friends
           </button>
         </div>
       )}
 
-
-
       {showShareOptions && videoUrl && (
-        <div className="absolute bottom-24 w-full flex flex-col items-center space-y-4 z-50">
-          {/* IG Share for Mobile */}
-          <InstagramShareButton
-            videoUrl={window.location.origin + videoUrl}
-            stickerUrl="https://dgenr8.world" // customize if you want a branded sticker
-          />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20vh",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem",
+            zIndex: 12,
+            pointerEvents: "none",
+          }}
+        >
+          <div style={{ pointerEvents: "auto" }}>
+            <InstagramShareButton
+              videoUrl={window.location.origin + videoUrl}
+              stickerUrl="https://dgenr8.world"
+            />
+          </div>
 
-          {/* Web Share API */}
           {navigator.share && (
             <button
               onClick={shareToSystem}
-              className="text-sm text-lime-300 underline hover:opacity-80"
+              style={{
+                pointerEvents: "auto",
+                fontSize: "0.875rem",
+                color: "#ccff33",
+                textDecoration: "underline",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               or share using your system menu
             </button>
           )}
 
-          {/* Fallback Download */}
           <a
             href={videoUrl}
             download
-            className="text-xs underline text-white/70 hover:text-white"
+            style={{
+              pointerEvents: "auto",
+              fontSize: "0.75rem",
+              color: "rgba(255, 255, 255, 0.7)",
+              textDecoration: "underline",
+            }}
+            onMouseEnter={(e) => (e.target.style.color = "white")}
+            onMouseLeave={(e) => (e.target.style.color = "rgba(255, 255, 255, 0.7)")}
           >
             or download the video manually
           </a>
         </div>
       )}
 
-
+      {recording && (
+        <div style={{ width: 1440, height: 1800, position: "absolute", top: -9999 }}>
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: 95 }}
+            gl={{ preserveDrawingBuffer: true }}
+          >
+            <Suspense fallback={null}>
+              <GlitchReadingContents
+                sphereVideoUrl={sphereVideoUrl}
+                bgVideoUrl={ bgVideoUrl }
+                onSphereReady={() => console.log("🌀 capture sphere ready")}
+                onBgReady={() => console.log("🎞️ capture bg ready")}
+              />
+            </Suspense>
+          </Canvas>
+        </div>
+      )}
     </div>
   );
 }

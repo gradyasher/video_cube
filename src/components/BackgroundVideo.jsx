@@ -6,8 +6,9 @@ import { bgVids } from "../constants/videoSources";
 
 
 
-export default function BackgroundVideo({ onReady, scale = 1 }) {
+export default function BackgroundVideo({ onReady, videoUrl, scale = 1 }) {
   const selectedSrc = useMemo(() => {
+    if (videoUrl) return videoUrl;
     const randomIndex = Math.floor(Math.random() * bgVids.length);
     return bgVids[randomIndex];
   }, []);
