@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { Canvas, extend } from "@react-three/fiber";
+import { useParams } from "react-router-dom";
 import * as THREE from "three";
 import { UnrealBloomPass } from "three-stdlib";
 import { Link } from "react-router-dom";
@@ -11,26 +12,34 @@ import { hostedVideoLinks } from "../constants/videoSources";
 import { bgVids } from "../constants/videoSources";
 import GlitchReadingContents from "../components/GlitchReadingContents";
 import LoadingScreen from "../components/LoadingScreen";
-import HamburgerMenu from "../components/HamburgerMenu";
 import SoundbathLogo from "../components/SoundbathLogo";
-import MusicPlayer from "../components/MusicPlayer";
-import useCanvasRecorder from "../hooks/useCanvasRecorder";
-import InstagramShareButton from "../components/InstagramShareButton";
-
+import useCanvasRecorderFromMainCanvas from "../hooks/useCanvasRecorderFromMainCanvas";
+import { Instagram, Share2, Download } from "lucide-react";
 
 extend({ UnrealBloomPass });
 
-export default function GlitchReading() {
+export default function GlitchReading({ isReferral = false }) {
+  const { id: referrerId } = useParams();
+  const [isSharing, setIsSharing] = useState(false);
   const [bgReady, setBgReady] = useState(false);
   const [sphereReady, setSphereReady] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
-  const [showSharePrompt, setShowSharePrompt] = useState(false);
-  const [showShareOptions, setShowShareOptions] = useState(false);
   const [userShared, setUserShared] = useState(false);
-  const [recording, setRecording] = useState(true); // show hidden Canvas initially
-  const [recordingComplete, setRecordingComplete] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const deletionTimeoutRef = useRef(null);
+
   const showMain = bgReady && sphereReady;
+
+  useCanvasRecorderFromMainCanvas({
+    trigger: recording,
+    durationMs: 6000,
+    fps: 10,
+    onComplete: (url) => {
+      setVideoUrl(url);
+    },
+  });
 
   const [sphereVideoUrl] = useState(() => {
     const index = Math.floor(Math.random() * hostedVideoLinks.length);
@@ -42,233 +51,337 @@ export default function GlitchReading() {
     return bgVids[index];
   });
 
-
-  useCanvasRecorder({
-    trigger: showMain && !videoUrl, // only start if page is ready and no video yet
-    durationMs: 6000,
-    onComplete: (url) => {
-      setVideoUrl(url);
-      setShowSharePrompt(true);
-    },
-  });
-
-  useEffect(() => {
-    if (recordingComplete) {
-      setRecording(false); // triggers unmount of hidden Canvas
-    }
-  }, [recordingComplete]);
-
-
-  useEffect(() => {
-    const checkForVideo = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/latest-glitch-video`);
-        const data = await res.json();
-        console.log("📦 fetched:", data);
-
-        if (data?.url && !videoUrl) { // <-- already fetched? skip
-          setVideoUrl(data.url);
-          setShowSharePrompt(true);
-        } else {
-          console.warn("No URL returned in response");
-        }
-      } catch (e) {
-        console.error("❌ Failed to fetch video:", e);
-      }
-    };
-
-    checkForVideo();
-  }, []);
-
-
-
-  useEffect(() => {
-    if (!videoUrl || !showMain) return;
-
-    deletionTimeoutRef.current = setTimeout(() => {
-      if (!userShared) {
-        fetch("http://localhost:3001/api/delete-glitch-video", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: videoUrl }),
-        });
-        console.log("🗑️ Video deleted due to inactivity");
-      }
-    }, 30000);
-
-    return () => clearTimeout(deletionTimeoutRef.current);
-  }, [videoUrl, showMain]);
-
-
   const shareToSystem = async () => {
-    if (!videoUrl || !navigator.share) return;
+  if (!videoUrl || !navigator.share) return;
 
+  setIsSharing(true); // temporarily disable button
     try {
       await navigator.share({
         title: "my VHS horoscope",
         text: "The sphere has chosen. 🌀",
         url: `${window.location.origin}${videoUrl}`,
       });
-      console.log("✅ Shared via system menu");
-      setUserShared(true); // prevent deletion
+
+      // ✅ Successful share
+      setUserShared(true);
       clearTimeout(deletionTimeoutRef.current);
+      setShowEmailPrompt(true); // 🧠 prompt email capture
+
+      // 📦 Log the referral if the user had one
+      if (referrerId) {
+        fetch("/api/log-referral", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            referrerId,
+            action: "shared",
+          }),
+        });
+      }
     } catch (err) {
-      console.warn("❌ Share canceled or failed:", err);
+      console.warn("❌ Share failed:", err);
+    } finally {
+      setIsSharing(false); // re-enable button
     }
   };
+
+  useEffect(() => {
+    if (isReferral && referrerId) {
+      fetch("/api/log-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from: referrerId }),
+      });
+    }
+  }, [isReferral, referrerId]);
+
+
+  useEffect(() => {
+    const handleUnload = () => {
+      if (!userShared && videoUrl) {
+        navigator.sendBeacon("/api/delete-glitch-video", JSON.stringify({ url: videoUrl }));
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [userShared, videoUrl]);
+
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <LoadingScreen isLoading={!showMain} />
       <TitleOverlay text="the sphere has chosen." />
 
-      <Canvas camera={{ position: [0, 0, 6.5] }} fog={{ color: "#000000", near: 2, far: 12 }}>
+      <Canvas
+        camera={{ position: [0, 0, 6.5] }}
+        fog={{ color: "#000000", near: 2, far: 12 }}
+        gl={{ preserveDrawingBuffer: true }}
+      >
         <GlitchReadingContents
           sphereVideoUrl={sphereVideoUrl}
-          bgVideoUrl={ bgVideoUrl }
-          onSphereReady={() => {
-            setSphereReady(true);
-          }}
+          bgVideoUrl={bgVideoUrl}
+          onSphereReady={() => setSphereReady(true)}
           onBgReady={() => setBgReady(true)}
         />
       </Canvas>
-      <SoundbathLogo />
 
-      {showMain && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10vh",
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            color: "#ccff33", // text-lime-300
-            fontSize: "0.875rem", // text-sm
-            gap: "0.75rem", // Tailwind space-y-3
-            zIndex: 10,
-            pointerEvents: "none",
-          }}
-        >
-          <p style={{
-            fontFamily: 'Helvetica, sans-serif',
-            fontSize: '0.875rem',
-            textAlign: 'center',
-            letterSpacing: '0.03em',
-            color: '#ccff33',
-            textShadow: '0 0 4px #ccff33aa',
-          }}>
-            share your reading & tag <span style={{ textDecoration: "underline" }}>@dgenrnation</span> to receive another transmission
-          </p>
-          <p style={{ fontSize: "0.75rem", pointerEvents: "auto" }}>🎲 Want a second gift? Nominate a friend to spin.</p>
-          <Link to="/" style={{ textDecoration: "underline", pointerEvents: "auto" }}>
-            &larr; back to home
-          </Link>
-        </div>
-      )}
-
-      {showMain && showSharePrompt && !showShareOptions && (
+      {showMain && !recording && !videoUrl && (
         <div
           style={{
             position: "absolute",
             bottom: "15vh",
             width: "100%",
             display: "flex",
-            justifyContent: "center",
-            zIndex: 11,
-            pointerEvents: "none",
+            flexDirection: "column",
+            alignItems: "center",
+            zIndex: 10,
+            pointerEvents: "auto",
           }}
         >
+          <p style={{
+            fontSize: "2.5rem",
+            fontFamily: "Helvetica, sans-serif",
+            color: "#ccff33",
+            marginBottom: "0.75rem",
+            maxWidth: '60%',
+            textAlign: "center",
+            textShadow: "0 0 4px #ccff33aa",
+            letterSpacing: "-0.1em"
+          }}>
+            Want another prize? Nominate a friend to spin or share us on social media!
+          </p>
           <button
-            onClick={() => setShowShareOptions(true)}
+            onClick={() => setRecording(true)}
             style={{
-              pointerEvents: "auto",
-              color: "#ccff33",
-              fontSize: "0.875rem",
-              border: "1px solid #ccff33",
-              padding: "0.25rem 0.75rem",
+              color: "#000",
+              background: "#ccff33",
+              fontSize: "1rem",
+              padding: "0.5rem 1rem",
               borderRadius: "0.25rem",
-              backgroundColor: "transparent",
+              fontWeight: "bold",
               cursor: "pointer",
             }}
           >
-            share this reading with your friends
+            Share
           </button>
         </div>
       )}
 
-      {showShareOptions && videoUrl && (
+      {showMain && recording && !videoUrl && (
         <div
           style={{
             position: "absolute",
-            bottom: "20vh",
+            bottom: "15vh",
+            width: "100%",
+            textAlign: "center",
+            fontSize: "2.5rem",
+            fontFamily: "Helvetica, sans-serif",
+            color: "#ccff33",
+            textShadow: "0 0 4px #ccff33aa",
+            zIndex: 10,
+            pointerEvents: "none",
+            letterSpacing: "-0.1em"
+          }}
+        >
+          preparing your media...
+        </div>
+      )}
+
+      {showMain && videoUrl && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "15vh",
             width: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             gap: "1rem",
             zIndex: 12,
-            pointerEvents: "none",
+            pointerEvents: "auto",
           }}
         >
-          <div style={{ pointerEvents: "auto" }}>
-            <InstagramShareButton
-              videoUrl={window.location.origin + videoUrl}
-              stickerUrl="https://dgenr8.world"
-            />
-          </div>
-
-          {navigator.share && (
-            <button
-              onClick={shareToSystem}
-              style={{
-                pointerEvents: "auto",
-                fontSize: "0.875rem",
-                color: "#ccff33",
-                textDecoration: "underline",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              or share using your system menu
-            </button>
-          )}
-
-          <a
-            href={videoUrl}
-            download
+          <p
             style={{
-              pointerEvents: "auto",
-              fontSize: "0.75rem",
-              color: "rgba(255, 255, 255, 0.7)",
-              textDecoration: "underline",
+              fontSize: "3rem",
+              color: "#ccff33",
+              fontFamily: "Helvetica, sans-serif",
+              textShadow: "0 0 4px #ccff33aa",
+              letterSpacing: "-0.1em"
             }}
-            onMouseEnter={(e) => (e.target.style.color = "white")}
-            onMouseLeave={(e) => (e.target.style.color = "rgba(255, 255, 255, 0.7)")}
           >
-            or download the video manually
-          </a>
+            Share your sphere with the world
+          </p>
+
+          <div style={{ display: "flex", gap: "1.5rem" }}>
+            <div
+              style={{
+                width: "2rem",
+                height: "2rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+            >
+              <Instagram className="w-full h-full text-[#ccff33]" />
+            </div>
+
+            <div
+              style={{
+                width: "2rem",
+                height: "2rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              onClick={shareToSystem}
+            >
+              <Share2 className="w-full h-full text-[#ccff33]" />
+            </div>
+
+            <div
+              style={{
+                width: "2rem",
+                height: "2rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              className="w-8 h-8 cursor-pointer hover:scale-110 transition"
+              onClick={async () => {
+                try {
+                  const res = await fetch(videoUrl, { method: "HEAD" });
+                  if (!res.ok) throw new Error("File no longer available");
+
+                  const a = document.createElement("a");
+                  a.href = videoUrl;
+                  a.download = "glitch-reading.mp4";
+                  a.click();
+
+                  setTimeout(() => {
+                    fetch("/api/delete-glitch-video", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ url: videoUrl }),
+                    });
+                    setUserShared(true);
+                  }, 1000);
+                } catch (err) {
+                  alert("⚠️ Your video expired. Please generate a new one.");
+                }
+              }}>
+              <Download className="w-full h-full text-[#ccff33]" />
+            </div>
+          </div>
+        </div>
+      )}
+      {showEmailPrompt && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.9)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <p
+            style={{
+              color: "#ccff33",
+              fontFamily: "Helvetica, sans-serif",
+              fontSize: "1.5rem",
+              textAlign: "center",
+              maxWidth: "80%",
+              marginBottom: "1.5rem",
+              textShadow: "0 0 4px #ccff33aa",
+            }}
+          >
+            thanks for sharing your sphere. <br />
+            drop your email to unlock your gift —<br />
+            and get a secret bonus if your friend opens the link 👁‍🗨
+          </p>
+
+          <input
+            type="email"
+            placeholder="your@email.com"
+            value={userEmail}
+            onChange={(e) => setUserEmail(e.target.value)}
+            style={{
+              padding: "0.75rem 1rem",
+              fontSize: "1rem",
+              borderRadius: "0.25rem",
+              border: "none",
+              outline: "none",
+              width: "260px",
+              marginBottom: "1rem",
+            }}
+          />
+
+          <button
+            onClick={async () => {
+              const shareId = videoUrl?.split("/").pop()?.replace(".mp4", "") || "unknown";
+              const referred = referrerId || "origin"; // 🧠 determine source
+
+              await fetch("/api/claim-referral", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: userEmail,
+                  shareId: shareId,
+                  referred: referred,
+                }),
+              });
+
+              setShowEmailPrompt(false); // hide modal
+              alert("🎁 your reward is on the way!");
+            }}
+            style={{
+              background: "#ccff33",
+              color: "#000",
+              fontWeight: "bold",
+              padding: "0.5rem 1rem",
+              borderRadius: "0.25rem",
+              cursor: "pointer",
+              fontSize: "1rem",
+            }}
+          >
+            Claim My Reward
+          </button>
+
         </div>
       )}
 
-      {recording && (
-        <div style={{ width: 1440, height: 1800, position: "absolute", top: -9999 }}>
-          <Canvas
-            camera={{ position: [0, 0, 5], fov: 95 }}
-            gl={{ preserveDrawingBuffer: true }}
-          >
-            <Suspense fallback={null}>
-              <GlitchReadingContents
-                sphereVideoUrl={sphereVideoUrl}
-                bgVideoUrl={ bgVideoUrl }
-                onSphereReady={() => console.log("🌀 capture sphere ready")}
-                onBgReady={() => console.log("🎞️ capture bg ready")}
-              />
-            </Suspense>
-          </Canvas>
-        </div>
-      )}
+      <Link
+        to="/"
+        style={{
+          fontSize: "0.75rem",
+          textDecoration: "underline",
+          color: "#ccff33",
+          marginTop: "1rem",
+          zIndex:[9999]
+        }}
+      >
+        ← back to home
+      </Link>
     </div>
   );
 }

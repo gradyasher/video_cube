@@ -107,6 +107,7 @@ export default function App() {
         <Route path="/mystery" element={<MysteryRewardPage />} />
         <Route path="/glitch-reading" element={<GlitchReading />} />
         <Route path="/capture" element={<GlitchReadingCapture />} />
+        <Route path="/glitch-reading/share/:id" element={<GlitchReading isReferral />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
