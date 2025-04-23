@@ -2,17 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from 'canvas-confetti';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { rewardMap } from "../constants/rewardMap";
+import RewardFollowUp from "./RewardFollowUp";
 
-const rewardPool = [
-  "free sticker pack",
-  "unreleased track",
-  "glitch zine pdf",
-  "10% off code",
-  "glitch reading",
-  "private livestream access",
-];
-
+const rewardPool = Object.keys(rewardMap);
 // calculate longest reward width in characters
 const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b));
 const approxCharWidth = 20; // monospace, estimate ~20px per character
@@ -27,47 +21,53 @@ export default function SlotMachine({ onFinish }) {
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [alreadyClaimed, setAlreadyClaimed] = useState(false);
+  const [countdown, setCountdown] = useState(null);
 
+  // Replace your existing submitEmail with this one:
+const submitEmail = async (finalRewardOverride = null) => {
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    alert("please enter a valid email");
+    return;
+  }
 
-  const submitEmail = async () => {
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      alert("please enter a valid email");
+  const rewardToSend = finalRewardOverride || finalReward;
+
+  if (!rewardToSend) {
+    console.warn("❌ Tried to submit email without final reward.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/subscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, reward: rewardToSend }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error || "subscription failed");
+    }
+
+    console.log("✅ email submitted to Mailchimp:", email, "→", rewardToSend);
+
+    if (result.alreadyClaimed) {
+      setAlreadyClaimed(true);
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
       return;
     }
 
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || "subscription failed");
-      }
-
-      console.log("✅ email submitted to Mailchimp:", email);
-
-      if (result.alreadyClaimed) {
-        setAlreadyClaimed(true);
-        setTimeout(() => {
-          navigate("/"); // ← smooth react-native style transition
-        }, 3000); // optional delay
-        return;
-      }
-
-      setEmailSubmitted(true);
-    } catch (err) {
-      console.error("❌ submission error:", err);
-      alert("Something went wrong while subscribing.");
-    }
-  };
-
-
+    setEmailSubmitted(true);
+  } catch (err) {
+    console.error("❌ submission error:", err);
+    alert("Something went wrong while subscribing.");
+  }
+};
 
 
   useEffect(() => {
@@ -92,14 +92,54 @@ export default function SlotMachine({ onFinish }) {
           setDisplayed(final);
           setFinalReward(final);
           onFinish(final);
+
+          const maybeGenerateDiscount = async () => {
+            if (final === "10% off code" && email && !alreadyClaimed) {
+              try {
+                const res = await fetch("/api/generate-discount", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email }),
+                });
+                const result = await res.json();
+                console.log("🎟️ Generated discount code:", result.code);
+                // optional: store in state
+                // setGeneratedCode(result.code);
+              } catch (err) {
+                console.error("❌ Discount code generation failed", err);
+              }
+            }
+          };
+
+          maybeGenerateDiscount(); // fire and forget
+
           confetti({
             particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
             colors: ['#CCFF00', '#00fff7', '#ffffff'],
           });
+
+          // ✅ send email here, after reward is known
+          if (email && !alreadyClaimed) {
+            submitEmail(final);
+          }
         }
       }, 40);
+
+      const rewardMeta = rewardMap[final];
+      if (rewardMeta?.redirect) {
+        let secondsLeft = 8;
+        const countdown = setInterval(() => {
+          secondsLeft -= 1;
+          setCountdown(secondsLeft);
+
+          if (secondsLeft <= 0) {
+            clearInterval(countdown);
+            navigate(rewardMeta.redirect);
+          }
+        }, 1000);
+      }
     }
 
     return () => clearInterval(interval);
@@ -119,7 +159,7 @@ export default function SlotMachine({ onFinish }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
         style={{
-          padding: "5vw 2vw",
+          padding: "5vw 0vw",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -135,7 +175,7 @@ export default function SlotMachine({ onFinish }) {
           transition={{ duration: 0.6 }}
           src="./assets/soundbath.png"
           alt="gongboi mascot"
-          style={{ width: "100px", marginTop: "2rem" }}
+          style={{ width: "100px", marginTop: "0rem" }}
         />
         {alreadyClaimed ? (
           <p style={{
@@ -168,25 +208,26 @@ export default function SlotMachine({ onFinish }) {
             >
               congratulations! you've been selected to receive one of the following gifts:
             </motion.p>
+            <ul style={{
+              marginTop: "0rem",
+              fontFamily: "monospace",
+              fontSize: "1rem",
+              color: "#ccc",
+              textAlign: "center",
+              listStyle: "none",
+              padding: 0,
+              lineHeight: "1.8",
+            }}>
+              {rewardPool.map((reward, idx) => (
+                <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
+                  • {reward}
+                </li>
+              ))}
+            </ul>
 
             {!emailSubmitted && (
-              <div style={{ marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-                <ul style={{
-                  marginTop: "0rem",
-                  fontFamily: "monospace",
-                  fontSize: "1rem",
-                  color: "#ccc",
-                  textAlign: "center",
-                  listStyle: "none",
-                  padding: 0,
-                  lineHeight: "1.8",
-                }}>
-                  {rewardPool.map((reward, idx) => (
-                    <li key={idx} style={{ marginBottom: "0.25rem", color: "#CCFF00" }}>
-                      • {reward}
-                    </li>
-                  ))}
-                </ul>
+              <div style={{ marginBottom: "0rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+
                 <input
                   type="email"
                   placeholder="enter your email"
@@ -209,17 +250,14 @@ export default function SlotMachine({ onFinish }) {
                   onClick={() => {
                     if (!emailSubmitted) {
                       if (/\S+@\S+\.\S+/.test(email)) {
-                        setEmailSubmitted(true);
-                        submitEmail(); // <- make sure this is async
+                        setEmailSubmitted(true); // ✅ mark email ready
                       } else {
                         alert("please enter a valid email");
                       }
-                      return;
+                    } else {
+                      startSpin(); // ✅ only spin after email is "submitted"
                     }
-
-                    startSpin(); // this should run only after emailSubmitted is true
                   }}
-
                   style={{
                     background: "#ccff00",
                     color: "#000",
@@ -231,9 +269,10 @@ export default function SlotMachine({ onFinish }) {
                     fontFamily: "monospace"
                   }}
                 >
-                  submit email →
+                  {emailSubmitted ? "reveal my reward →" : "submit email →"}
                 </button>
-                <p style={{ color: "#aaa", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+
+                <p style={{ color: "#aaa", fontSize: "0.75rem", marginTop: "0rem" }}>
                   one entry per email address. for more free stuff join us on Discord!
                 </p>
               </div>
@@ -255,7 +294,7 @@ export default function SlotMachine({ onFinish }) {
                   <div
                     style={{
                       fontSize: "1.6rem",
-                      marginBottom: "1rem",
+                      marginBottom: "0rem",
                       minHeight: "2em",
                       minWidth: "clamp(200px, 80vw, 500px)",
                       maxWidth: "90vw",
@@ -300,7 +339,9 @@ export default function SlotMachine({ onFinish }) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.4 }}
                       onClick={startSpin}
-                      disabled={spinning}
+                      disabled={
+                        spinning || rewardMap[finalReward]?.isEmailReward
+                      }
                       style={{
                         fontSize: "1rem",
                         padding: "0.75rem 1.5rem",
@@ -319,13 +360,15 @@ export default function SlotMachine({ onFinish }) {
                     </motion.button>
                   )}
 
-
-
                   {finalReward && (
-                    <p style={{ marginTop: "1.25rem", color: "#fff", fontSize: "0.9rem" }}>
+                    <p style={{ marginTop: "0.5rem", color: "#fff", fontSize: "0.9rem" }}>
                       you received: <strong>{finalReward}</strong>
                     </p>
                   )}
+                  {finalReward && <RewardFollowUp reward={finalReward} countdown={countdown} />}
+                  <Link to="/" style={{ display: "block", marginTop: "2rem", textAlign: "center", color: "#ccff00", fontSize: "0.875rem" }}>
+                    ← back to home
+                  </Link>
                 </div>
               </>
             )}

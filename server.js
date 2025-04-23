@@ -8,7 +8,9 @@ import { spawn } from "child_process";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { generateQRCode } from "./src/utils/generateQRCode.js"; // adjust path as needed
+import subscribeHandler from "./api/subscribe.js"; // or require(...) if using CJS
 import { triggerMailchimpJourney } from "./api/mailchimp.js";
+import generateDiscount from "./api/generate-discount.js"; // ✅ adjust if needed
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -21,6 +23,7 @@ dotenv.config();
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
+app.use("/api/generate-discount", generateDiscount);
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -30,7 +33,6 @@ function isRateLimited(ip) {
   ipClaims.set(ip, [...recent, now]);
   return false;
 }
-
 
 // auto-purge generated folder every 5 minutes
 setInterval(() => {
@@ -64,7 +66,10 @@ setInterval(() => {
   });
 }, 15 * 60 * 1000);
 
-
+app.post("/api/subscribe", (req, res) => {
+  subscribeHandler(req, res);
+  console.log("✅ /api/subscribe endpoint wired up");
+});
 
 app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
   console.log("📩 Received POST /api/process-glitch-video");

@@ -3,8 +3,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "method not allowed" });
   }
 
-  const { email } = req.body;
-  const API_KEY = process.env.VITE_MAILCHIMP_API_KEY;
+  const { email, reward } = req.body;
+
+  // 🧼 Skip burner domains (optional but wise)
+  const bannedDomains = ["tempmail.com", "mailinator.com", "10minutemail.com"];
+  const domain = email.split("@")[1];
+  if (bannedDomains.includes(domain)) {
+    return res.status(400).json({ message: "Temporary email domains are not allowed." });
+  }
+
+  // 🧪 MOCK Mailchimp in development
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[dev mode] Skipping Mailchimp – fake-subbed ${email} for ${reward}`);
+    res.setHeader(
+      "Set-Cookie",
+      `claimedMysteryReward=${encodeURIComponent(email)}; Path=/; Max-Age=31536000; HttpOnly`
+    );
+    return res.status(200).json({ message: "Mock subscription success", reward });
+  }
+
+  const API_KEY = process.env.MAILCHIMP_API_KEY;
   const AUDIENCE_ID = "e119572dab";
   const DATACENTER = API_KEY.split("-")[1];
 
@@ -14,9 +32,16 @@ export default async function handler(req, res) {
   const cookie = req.headers.cookie || "";
   const claimedCookie = cookie.split("; ").find((c) => c.startsWith("claimedMysteryReward="));
 
+  // if cookie exists, AND the incoming email matches, then block
   if (claimedCookie) {
-    return res.status(429).json({ message: "You've already claimed this reward." });
+    const body = req.body; // or however you parse the request
+    const claimedEmail = decodeURIComponent(claimedCookie.split("=")[1]);
+
+    if (body.email === claimedEmail) {
+      return res.status(429).json({ message: "You've already claimed this reward." });
+    }
   }
+
 
   // 🛡️ Optional: block by IP (can be spoofed, but still useful for soft rate-limiting)
   // const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;

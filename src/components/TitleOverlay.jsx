@@ -2,7 +2,7 @@
 import React from "react";
 import Title from "./Title";
 
-export default function TitleOverlay({ text }) {
+export default function TitleOverlay({ text}) {
   return (
     <div
       className="title-wrapper"

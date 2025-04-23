@@ -2,7 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-export default function Title({ children }) {
+export default function Title({ children, style = {}  }) {
   return (
     <motion.h1
       initial={{ opacity: 0, y: -50 }}
@@ -18,6 +18,7 @@ export default function Title({ children }) {
         textAlign: "center",
         margin: 0,
         padding: 0,
+        ...style,
       }}
     >
       {children}

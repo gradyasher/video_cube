@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .vercel
 /public/generated/
+/public/frames/
+.env
+.env
