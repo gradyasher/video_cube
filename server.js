@@ -14,11 +14,23 @@ const app = express();
 const upload = multer({ dest: "uploads/" });
 const PORT = 3001;
 const MAX_AGE_MINUTES = 10;
+const ipClaims = new Map(); // IP => timestamp[]
+const MAX_CLAIMS_PER_HOUR = 3;
 
 dotenv.config();
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const claims = ipClaims.get(ip) || [];
+  const recent = claims.filter(ts => now - ts < 60 * 60 * 1000); // last hour
+  if (recent.length >= MAX_CLAIMS_PER_HOUR) return true;
+  ipClaims.set(ip, [...recent, now]);
+  return false;
+}
+
 
 // auto-purge generated folder every 5 minutes
 setInterval(() => {
@@ -156,7 +168,6 @@ app.get("/api/latest-glitch-video", (req, res) => {
   return res.json({ url: `/generated/${latest}` });
 });
 
-
 // Frame upload route
 app.post("/api/upload-frame", upload.single("frame"), (req, res) => {
   const sessionId = req.body.sessionId;
@@ -215,13 +226,9 @@ app.post("/api/stitch-frames", async (req, res) => {
     "-i", qrPath,
     "-filter_complex",
     [
-      // main: scale to height 1350 and crop to 1080:1350
-      "[0:v]scale=-1:1350,crop=1080:1350[main]",
-      // overlay: scale to fit frame
-      "[1:v]scale=1080:1350[overlay]",
-      // qr: scale down
-      "[2:v]scale=100:100[qr]",
-      // stack: apply overlay, then QR at bottom-right
+      "[0:v]scale=1080:-1,crop=1080:1350[main]",             // safe scaling + crop
+      "[1:v]scale=1080:1350[overlay]",                        // full-screen overlay
+      "[2:v]scale=100:100[qr]",                               // QR code scaled down
       "[main][overlay]overlay=0:0[tmp1]; [tmp1][qr]overlay=W-w-30:H-h-30"
     ].join(";"),
     "-c:v", "libx264",
@@ -285,6 +292,13 @@ app.post("/api/claim-referral", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   const listId = process.env.MAILCHIMP_AUDIENCE_ID;
   const apiKey = process.env.MAILCHIMP_API_KEY;
+
+  if (isRateLimited(ip)) {
+    console.warn("⚠️ Rate limit triggered:", ip);
+    return res.status(429).json({ error: "Too many claims from this IP." });
+  }
+
+
   const journeyUrl = "https://us12.api.mailchimp.com/3.0/customer-journeys/journeys/3986/steps/29643/actions/trigger";
 
   if (!email || !shareId || !referred) {
@@ -414,7 +428,7 @@ app.post("/api/mailchimp/referral-opened", async (req, res) => {
         email_address: email,
         merge_fields: {
           ADDRESS: "" // empty string to satisfy required field
-        } 
+        }
       }),
     });
 
@@ -432,8 +446,6 @@ app.post("/api/mailchimp/referral-opened", async (req, res) => {
     res.status(500).json({ error: "Internal error", details: err.message });
   }
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`🧠 Backend running on http://localhost:${PORT}`);

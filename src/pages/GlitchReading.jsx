@@ -21,6 +21,7 @@ extend({ UnrealBloomPass });
 export default function GlitchReading({ isReferral = false }) {
   const { id: referrerId } = useParams();
   const [isSharing, setIsSharing] = useState(false);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const [bgReady, setBgReady] = useState(false);
   const [sphereReady, setSphereReady] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
@@ -40,6 +41,13 @@ export default function GlitchReading({ isReferral = false }) {
       setVideoUrl(url);
     },
   });
+
+  const loadingPhrases = [
+    "preparing ur media, don't click away....",
+    "contacting server, just a bit longer...",
+    "almost there!"
+  ];
+
 
   const [sphereVideoUrl] = useState(() => {
     const index = Math.floor(Math.random() * hostedVideoLinks.length);
@@ -102,7 +110,6 @@ export default function GlitchReading({ isReferral = false }) {
     }
   };
 
-
   useEffect(() => {
     if (isReferral && referrerId) {
       fetch("/api/mailchimp/referral-opened", {
@@ -113,6 +120,15 @@ export default function GlitchReading({ isReferral = false }) {
     }
   }, [isReferral, referrerId]);
 
+  useEffect(() => {
+    if (!recording || videoUrl) return;
+
+    const interval = setInterval(() => {
+      setLoadingTextIndex((prev) => (prev + 1) % loadingPhrases.length);
+    }, 3000); // change text every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [recording, videoUrl]);
 
   useEffect(() => {
     const handleUnload = () => {
@@ -148,7 +164,7 @@ export default function GlitchReading({ isReferral = false }) {
         <div
           style={{
             position: "absolute",
-            bottom: "15vh",
+            bottom: "10vh", // 🔽 moved further down the screen
             width: "100%",
             display: "flex",
             flexDirection: "column",
@@ -158,14 +174,14 @@ export default function GlitchReading({ isReferral = false }) {
           }}
         >
           <p style={{
-            fontSize: "2.5rem",
+            fontSize: "clamp(16px, 5vw, 32px)", // ✅ responsive scaling
             fontFamily: "Helvetica, sans-serif",
             color: "#ccff33",
             marginBottom: "0.75rem",
-            maxWidth: '60%',
+            maxWidth: '80%',
             textAlign: "center",
             textShadow: "0 0 4px #ccff33aa",
-            letterSpacing: "-0.1em"
+            letterSpacing: "-0.05em"
           }}>
             Want another prize? Nominate a friend to spin or share us on social media!
           </p>
@@ -183,17 +199,30 @@ export default function GlitchReading({ isReferral = false }) {
           >
             Share
           </button>
+          <Link
+            to="/"
+            style={{
+              fontSize: "0.75rem",
+              textDecoration: "underline",
+              color: "#ccff33",
+              marginTop: "1rem",
+              zIndex:[9999]
+            }}
+          >
+            ← back to home
+          </Link>
         </div>
       )}
+
 
       {showMain && recording && !videoUrl && (
         <div
           style={{
             position: "absolute",
-            bottom: "15vh",
+            bottom: "10vh", // pulled down for consistency
             width: "100%",
             textAlign: "center",
-            fontSize: "2.5rem",
+            fontSize: "clamp(18px, 6vw, 40px)", // responsive sizing
             fontFamily: "Helvetica, sans-serif",
             color: "#ccff33",
             textShadow: "0 0 4px #ccff33aa",
@@ -202,7 +231,19 @@ export default function GlitchReading({ isReferral = false }) {
             letterSpacing: "-0.1em"
           }}
         >
-          preparing your media...
+          {loadingPhrases[loadingTextIndex]}
+          <Link
+            to="/"
+            style={{
+              fontSize: "0.75rem",
+              textDecoration: "underline",
+              color: "#ccff33",
+              marginTop: "1rem",
+              zIndex:[9999]
+            }}
+          >
+            ← back to home
+          </Link>
         </div>
       )}
 
@@ -210,7 +251,7 @@ export default function GlitchReading({ isReferral = false }) {
         <div
           style={{
             position: "absolute",
-            bottom: "15vh",
+            bottom: "10vh", // pulled down for consistency
             width: "100%",
             display: "flex",
             flexDirection: "column",
@@ -222,15 +263,17 @@ export default function GlitchReading({ isReferral = false }) {
         >
           <p
             style={{
-              fontSize: "3rem",
+              fontSize: "clamp(18px, 6vw, 40px)", // responsive sizing
               color: "#ccff33",
               fontFamily: "Helvetica, sans-serif",
               textShadow: "0 0 4px #ccff33aa",
-              letterSpacing: "-0.1em"
+              letterSpacing: "-0.1em",
+              textAlign: "center" // ✅ center-align
             }}
           >
             Share your sphere with the world
           </p>
+
 
           <div style={{ display: "flex", gap: "1.5rem" }}>
             <div
@@ -304,6 +347,18 @@ export default function GlitchReading({ isReferral = false }) {
               <Download className="w-full h-full text-[#ccff33]" />
             </div>
           </div>
+          <Link
+            to="/"
+            style={{
+              fontSize: "0.75rem",
+              textDecoration: "underline",
+              color: "#ccff33",
+              marginTop: "1rem",
+              zIndex:[9999]
+            }}
+          >
+            ← back to home
+          </Link>
         </div>
       )}
       {showEmailPrompt && (
@@ -390,22 +445,20 @@ export default function GlitchReading({ isReferral = false }) {
           >
             Claim My Reward
           </button>
-
+          <Link
+            to="/"
+            style={{
+              fontSize: "0.75rem",
+              textDecoration: "underline",
+              color: "#ccff33",
+              marginTop: "1rem",
+              zIndex:[9999]
+            }}
+          >
+            ← back to home
+          </Link>
         </div>
       )}
-
-      <Link
-        to="/"
-        style={{
-          fontSize: "0.75rem",
-          textDecoration: "underline",
-          color: "#ccff33",
-          marginTop: "1rem",
-          zIndex:[9999]
-        }}
-      >
-        ← back to home
-      </Link>
     </div>
   );
 }
