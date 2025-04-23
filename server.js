@@ -3,16 +3,19 @@ import express from "express";
 import multer from "multer";
 import cors from "cors";
 import path from "path";
+import dotenv from "dotenv";
 import { spawn } from "child_process";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { generateQRCode } from "./src/utils/generateQRCode.js"; // adjust path as needed
+import { triggerMailchimpJourney } from "./api/mailchimp.js";
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 const PORT = 3001;
 const MAX_AGE_MINUTES = 10;
 
+dotenv.config();
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
@@ -34,6 +37,21 @@ setInterval(() => {
     }
   });
 }, 10 * 60 * 1000); // every 10 minutes
+setInterval(() => {
+  const dir = path.resolve("uploads");
+  const now = Date.now();
+
+  fs.readdirSync(dir).forEach((file) => {
+    const filePath = path.join(dir, file);
+    const stats = fs.statSync(filePath);
+    const ageMinutes = (now - stats.mtime.getTime()) / 60000;
+    if (ageMinutes > 15) {
+      fs.unlinkSync(filePath);
+      console.log("🧹 Deleted temp upload:", file);
+    }
+  });
+}, 15 * 60 * 1000);
+
 
 
 app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
@@ -260,26 +278,161 @@ app.post("/api/log-referral", (req, res) => {
 });
 
 app.post("/api/claim-referral", (req, res) => {
+  console.log("📩 /api/claim-referral hit");
+
   const { email, shareId, referred } = req.body;
   const timestamp = new Date().toISOString();
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const listId = process.env.MAILCHIMP_AUDIENCE_ID;
+  const apiKey = process.env.MAILCHIMP_API_KEY;
+  const journeyUrl = "https://us12.api.mailchimp.com/3.0/customer-journeys/journeys/3986/steps/29643/actions/trigger";
 
   if (!email || !shareId || !referred) {
+    console.error("❌ Missing fields", { email, shareId, referred });
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const logLine = `${timestamp} | email: ${email} | shareId: ${shareId} | referred: ${referred}\n`;
   const logPath = path.resolve("logs/referral-claims.log");
 
   try {
-    if (!fs.existsSync("logs")) fs.mkdirSync("logs", { recursive: true });
+    const logDir = path.resolve("logs");
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    if (!fs.existsSync(logPath)) fs.writeFileSync(logPath, "");
+
+    const existing = fs.readFileSync(logPath, "utf8").split("\n").filter(Boolean);
+    const duplicate = existing.find(line =>
+      line.includes(`email: ${email}`) ||
+      line.includes(`ip: ${ip}`) ||
+      (line.includes(`shareId: ${shareId}`) && line.includes(`email: ${email}`))
+    );
+
+    if (duplicate) {
+      console.log("🛑 Duplicate claim blocked:", email, ip);
+      return res.status(409).json({ error: "Already claimed" });
+    }
+
+    const logLine = `${timestamp} | email: ${email} | ip: ${ip} | shareId: ${shareId} | referred: ${referred}\n`;
     fs.appendFileSync(logPath, logLine);
-    console.log("📩 Claimed referral:", logLine.trim());
-    res.status(200).json({ message: "Referral claim logged" });
+    const sanitizedEmail = email.trim().toLowerCase();
+
+    (async () => {
+      try {
+        const addRes = await fetch(`https://us12.api.mailchimp.com/3.0/lists/${listId}/members`, {
+          method: "POST",
+          headers: {
+            Authorization: `apikey ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email_address: sanitizedEmail,
+            status: "subscribed",
+            merge_fields: {
+              ADDRESS: "" // empty string to satisfy required field
+            }
+          }),
+        });
+
+        if (!addRes.ok) {
+          const err = await addRes.json();
+          console.error("❌ Failed to add contact to audience:", err);
+        } else {
+          console.log("✅ Contact added to audience:", sanitizedEmail);
+        }
+
+        const journeyRes = await fetch(journeyUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `apikey ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email_address: sanitizedEmail,
+            merge_fields: {
+              ADDRESS: "" // empty string to satisfy required field
+            }
+          }),
+        });
+
+        if (!journeyRes.ok) {
+          const err = await journeyRes.json();
+          console.error("❌ Journey trigger failed:", err);
+        } else {
+          console.log("✅ Mailchimp bonus triggered for Viewer A:", referred);
+        }
+      } catch (err) {
+        console.error("❌ Mailchimp claim-referral crash:", err.message);
+      }
+    })();
+
+    console.log("✅ Referral claim saved:", logLine.trim());
+    return res.status(200).json({ message: "Claim logged" });
   } catch (err) {
-    console.error("🛑 Failed to save referral claim:", err);
-    res.status(500).json({ error: "Failed to save referral claim" });
+    console.error("❌ claim-referral crash:", err);
+    return res.status(500).json({ error: "Server error", details: err.message });
   }
 });
+
+app.post("/api/mailchimp/referral-opened", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) return res.status(400).json({ error: "Missing email" });
+
+  const listId = process.env.MAILCHIMP_AUDIENCE_ID;
+  const apiKey = process.env.MAILCHIMP_API_KEY;
+  const journeyUrl = "https://us12.api.mailchimp.com/3.0/customer-journeys/journeys/3987/steps/29645/actions/trigger";
+
+  try {
+    const addRes = await fetch(`https://us12.api.mailchimp.com/3.0/lists/${listId}/members`, {
+      method: "POST",
+      headers: {
+        Authorization: `apikey ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email_address: email,
+        status: "subscribed",
+        merge_fields: {
+          ADDRESS: "" // empty string to satisfy required field
+        }
+      }),
+    });
+
+    if (!addRes.ok) {
+      const err = await addRes.json();
+      console.error("❌ Failed to add contact to audience:", err);
+    } else {
+      console.log("✅ Contact added to audience:", email);
+    }
+
+    const triggerRes = await fetch(journeyUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `apikey ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email_address: email,
+        merge_fields: {
+          ADDRESS: "" // empty string to satisfy required field
+        } 
+      }),
+    });
+
+    if (!triggerRes.ok) {
+      const err = await triggerRes.json();
+      console.error("❌ Journey trigger failed:", err);
+      return res.status(500).json({ error: "Journey trigger failed", detail: err });
+    }
+
+    console.log("✅ Referral-opened journey triggered for:", email);
+    res.status(200).json({ message: "Referral-opened journey triggered" });
+
+  } catch (err) {
+    console.error("❌ Mailchimp referral-opened crash:", err.message);
+    res.status(500).json({ error: "Internal error", details: err.message });
+  }
+});
+
 
 
 app.listen(PORT, () => {

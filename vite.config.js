@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react(), glsl()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3000', // if running your own local server, not needed for Vercel
+      '/api': 'http://localhost:3001', // if running your own local server, not needed for Vercel
     },
   },
 });

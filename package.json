@@ -21,6 +21,7 @@
     "canvas": "^3.1.0",
     "canvas-confetti": "^1.9.3",
     "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "formidable": "^2.1.0",
     "framer-motion": "^12.6.2",

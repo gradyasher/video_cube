@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, Suspense } from "react";
+import React, { useState, useRef, useEffect, Suspense, useMemo } from "react";
 import { Canvas, extend } from "@react-three/fiber";
 import { useParams } from "react-router-dom";
 import * as THREE from "three";
@@ -51,23 +51,39 @@ export default function GlitchReading({ isReferral = false }) {
     return bgVids[index];
   });
 
+  const shareId = useMemo(() => {
+    return videoUrl?.split("/").pop()?.replace(".mp4", "") || "unknown";
+  }, [videoUrl]);
+
   const shareToSystem = async () => {
-  if (!videoUrl || !navigator.share) return;
+    if (!videoUrl) {
+      console.warn("⚠️ No video URL available to share.");
+      return;
+    }
 
-  setIsSharing(true); // temporarily disable button
+    const shareLink = `${window.location.origin}/glitch-reading/share/${shareId}`;
+    setIsSharing(true);
+
     try {
-      await navigator.share({
-        title: "my VHS horoscope",
-        text: "The sphere has chosen. 🌀",
-        url: `${window.location.origin}${videoUrl}`,
-      });
+      // ✅ Native share (mobile)
+      if (navigator.share) {
+        await navigator.share({
+          title: "my VHS horoscope",
+          text: "The sphere has chosen. 🌀",
+          url: shareLink,
+        });
+      } else {
+        // 🧠 Fallback for unsupported browsers (desktop)
+        await navigator.clipboard.writeText(shareLink);
+        alert("🔗 Link copied to clipboard!");
+      }
 
-      // ✅ Successful share
+      // ✅ On successful share (or copy)
       setUserShared(true);
       clearTimeout(deletionTimeoutRef.current);
-      setShowEmailPrompt(true); // 🧠 prompt email capture
+      setShowEmailPrompt(true);
 
-      // 📦 Log the referral if the user had one
+      // 📦 Log the referral if applicable
       if (referrerId) {
         fetch("/api/log-referral", {
           method: "POST",
@@ -78,19 +94,21 @@ export default function GlitchReading({ isReferral = false }) {
           }),
         });
       }
+
     } catch (err) {
-      console.warn("❌ Share failed:", err);
+      console.warn("❌ Share failed or was cancelled:", err);
     } finally {
-      setIsSharing(false); // re-enable button
+      setIsSharing(false);
     }
   };
 
+
   useEffect(() => {
     if (isReferral && referrerId) {
-      fetch("/api/log-referral", {
+      fetch("/api/mailchimp/referral-opened", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: referrerId }),
+        body: JSON.stringify({ email: userEmail }),
       });
     }
   }, [isReferral, referrerId]);
@@ -338,21 +356,27 @@ export default function GlitchReading({ isReferral = false }) {
 
           <button
             onClick={async () => {
-              const shareId = videoUrl?.split("/").pop()?.replace(".mp4", "") || "unknown";
-              const referred = referrerId || "origin"; // 🧠 determine source
+              const referred = referrerId || "origin";
 
-              await fetch("/api/claim-referral", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: userEmail,
-                  shareId: shareId,
-                  referred: referred,
-                }),
-              });
+              try {
+                const res = await fetch("/api/claim-referral", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: userEmail, shareId, referred }),
+                });
 
-              setShowEmailPrompt(false); // hide modal
-              alert("🎁 your reward is on the way!");
+                if (res.status === 409) {
+                  alert("⚠️ You’ve already claimed this reward from this device or email.");
+                } else if (!res.ok) {
+                  alert("❌ Something went wrong. Please try again.");
+                } else {
+                  setShowEmailPrompt(false);
+                  alert("🎁 your reward is on the way!");
+                }
+              } catch (err) {
+                console.error("❌ Claim error:", err);
+                alert("❌ Network error. Please try again later.");
+              }
             }}
             style={{
               background: "#ccff33",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import mailchimp from "@mailchimp/mailchimp_marketing";
 import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
@@ -8,10 +9,14 @@ import PopoutCart from "./components/PopoutCart";
 import CheckoutPage from "./pages/CheckoutPage";
 import MysteryRewardPage from "./pages/MysteryRewardPage";
 import GlitchReading from "./pages/GlitchReading";
+import GlitchReadingShare from "./pages/GlitchReadingShare";
 import GlitchReadingCapture from "./components/GlitchReadingCapture";
 import { AnimatePresence } from "framer-motion";
 
-
+mailchimp.setConfig({
+  apiKey: "YOUR_API_KEY", // 🔐 set via env var ideally
+  server: "YOUR_SERVER_PREFIX", // e.g., "us21" from api key
+});
 
 export default function App() {
   const location = useLocation();
@@ -107,7 +112,7 @@ export default function App() {
         <Route path="/mystery" element={<MysteryRewardPage />} />
         <Route path="/glitch-reading" element={<GlitchReading />} />
         <Route path="/capture" element={<GlitchReadingCapture />} />
-        <Route path="/glitch-reading/share/:id" element={<GlitchReading isReferral />} />
+        <Route path="/glitch-reading/share/:id" element={<GlitchReadingShare />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
