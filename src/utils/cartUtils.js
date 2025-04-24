@@ -46,8 +46,8 @@ export async function resetCartCompletely() {
   location.reload();
 }
 
-export function hasStickerInCart(cart, FREE_STICKER_VARIANT_ID) {
+export function hasStickerInCart(cart, sticker_id) {
   return cart?.lines?.some(
-    (item) => item.merchandise?.id === FREE_STICKER_VARIANT_ID
+    (item) => item.merchandise?.id === sticker_id
   );
 }

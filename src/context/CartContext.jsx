@@ -1,4 +1,5 @@
 // src/context/CartContext.jsx
+
 import { createContext, useContext, useState, useEffect } from "react";
 import useShopifyCart from "../hooks/useShopifyCart";
 

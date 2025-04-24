@@ -3,12 +3,14 @@
 const rewardCache = new Map();
 
 export default async function handler(req, res) {
+  // must be a post method
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method not allowed" });
   }
 
   const { email, reward, cartId } = req.body;
 
+  // missing necessary data?
   if (!email || !reward || !cartId) {
     return res.status(400).json({ error: "Missing email, reward, or cartId" });
   }
@@ -61,6 +63,7 @@ export default async function handler(req, res) {
   };
 
   try {
+    // send to mailchimp
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -72,6 +75,7 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
+    // already subbed?
     if (result.title === "Member Exists") {
       console.log("👻 Already subscribed:", email);
       rewardCache.set(claimedKey, true); // ✅ still mark reward as claimed
@@ -82,6 +86,7 @@ export default async function handler(req, res) {
       });
     }
 
+    // success
     if (response.status === 200 || response.status === 201) {
       rewardCache.set(claimedKey, true); // ✅ success → mark as claimed
       res.setHeader(

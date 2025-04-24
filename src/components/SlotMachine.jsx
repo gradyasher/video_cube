@@ -1,20 +1,18 @@
 // src/components/SlotMachine.jsx
+
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from 'canvas-confetti';
 import { useNavigate, Link } from "react-router-dom";
 import { rewardMap } from "../constants/rewardMap";
 import RewardFollowUp from "./RewardFollowUp";
-import useShopifyCart from "../hooks/useShopifyCart";
+import { useCartContext } from "../context/CartContext";
 import { resetCartCompletely } from "/src/utils/cartUtils";
 
-
 const rewardPool = Object.keys(rewardMap);
-// calculate longest reward width in characters
 const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b));
-const approxCharWidth = 20; // monospace, estimate ~20px per character
+const approxCharWidth = 20;
 const minWidth = `${longestReward.length * approxCharWidth}px`;
-
 
 export default function SlotMachine({ onFinish }) {
   const navigate = useNavigate();
@@ -26,76 +24,76 @@ export default function SlotMachine({ onFinish }) {
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [alreadyClaimed, setAlreadyClaimed] = useState(false);
   const [countdown, setCountdown] = useState(null);
-  const { fetchCart, addItem, cartId, cart, createCart } = useShopifyCart(); // name may differ
+  const { cart, cartId, addItem, fetchCart } = useCartContext();
 
-  useEffect(() => {
-    const ensureCart = async () => {
-      if (!cartId) {
-        console.log("📦 No cart ID — creating cart before proceeding");
-        const newCart = await createCart();
-        if (!newCart?.id) {
-          console.error("❌ Failed to create cart");
-        }
+  const retryUntilCartId = async (attempts = 3) => {
+    for (let i = 0; i < attempts; i++) {
+      const id = localStorage.getItem("shopify_cart_id");
+      if (id) return id;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    return null;
+  };
+
+  const submitEmail = async (finalRewardOverride = null) => {
+    // test for email format
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      alert("please enter a valid email");
+      return;
+    }
+
+
+    const rewardToSend = finalRewardOverride || finalReward;
+    let idToUse = cartId || (await retryUntilCartId());
+
+    // check for missing data
+    if (!rewardToSend || !idToUse) {
+      console.warn("❌ Missing reward or cartId during email submission.");
+      console.log("rewardToSend: ", rewardToSend);
+      console.log("cartId: ", idToUse);
+      return;
+    }
+
+    try {
+      // send email and selected reward to backend
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          reward: rewardToSend,
+          cartId: idToUse,
+        }),
+      });
+
+
+      const result = await res.json();
+      // check result
+      if (!res.ok) {
+        throw new Error(result.error || "subscription failed");
       }
-    };
-    ensureCart();
-    }, [cartId]);
 
-  // Replace your existing submitEmail with this one:
-    const submitEmail = async (finalRewardOverride = null) => {
-      if (!/\S+@\S+\.\S+/.test(email)) {
-        alert("please enter a valid email");
+      console.log("✅ email + reward submitted:", email, "→", rewardToSend);
+
+      // redirect home if they already
+      if (result.alreadyClaimed) {
+        setAlreadyClaimed(true);
+        setTimeout(() => {
+          navigate("/");
+        }, 3000);
         return;
       }
 
-      const rewardToSend = finalRewardOverride || finalReward;
-
-      if (!rewardToSend || !cartId) {
-        console.warn("❌ Missing reward or cartId during email submission.");
-        console.log("rewardToSend: ", rewardToSend)
-        console.log("cartId: ", cartId)
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            reward: rewardToSend,
-            cartId,
-          }),
-        });
-
-        const result = await res.json();
-
-        if (!res.ok) {
-          throw new Error(result.error || "subscription failed");
-        }
-
-        console.log("✅ email + reward submitted:", email, "→", rewardToSend);
-
-        if (result.alreadyClaimed) {
-          setAlreadyClaimed(true);
-          setTimeout(() => {
-            navigate("/");
-          }, 3000);
-          return;
-        }
-
-        setEmailSubmitted(true);
-      } catch (err) {
-        console.error("❌ submission error:", err);
-        alert("Something went wrong while subscribing.");
-      }
-    };
-
-
+      setEmailSubmitted(true);
+    } catch (err) {
+      console.error("❌ submission error:", err);
+      alert("Something went wrong while subscribing.");
+    }
+  };
 
   useEffect(() => {
+    // spinning animation
     let interval;
-
     if (spinning) {
       const final = rewardPool[Math.floor(Math.random() * rewardPool.length)];
 
@@ -117,9 +115,10 @@ export default function SlotMachine({ onFinish }) {
           onFinish(final);
 
           const maybeAddSticker = async () => {
+            // add sticker 2 cart if that's what they roll
             if (final !== "free sticker with purchase!") return;
-
-            if (!cartId) {
+            let idToUse = cartId || (await retryUntilCartId());
+            if (!idToUse) {
               console.warn("🚫 No cart ID found — skipping sticker add.");
               return;
             }
@@ -128,7 +127,7 @@ export default function SlotMachine({ onFinish }) {
               const res = await fetch("/api/add-free-sticker", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cartId }),
+                body: JSON.stringify({ cartId: idToUse }),
               });
 
               const result = await res.json();
@@ -137,6 +136,7 @@ export default function SlotMachine({ onFinish }) {
                 console.log("🛑 Sticker already in cart — backend prevented duplicate");
               } else if (res.ok) {
                 console.log("🧃 Sticker added to cart via backend");
+                await fetchCart(idToUse); // 🛍️ refresh local cart state so UI updates
               } else {
                 console.error("❌ Backend failed to add sticker:", result?.error || result);
               }
@@ -144,8 +144,6 @@ export default function SlotMachine({ onFinish }) {
               console.error("❌ Failed to call add-free-sticker endpoint:", err);
             }
           };
-
-
 
           const maybeGenerateDiscount = async () => {
             if (final === "10% off code" && email && !alreadyClaimed) {
@@ -157,8 +155,6 @@ export default function SlotMachine({ onFinish }) {
                 });
                 const result = await res.json();
                 console.log("🎟️ Generated discount code:", result.code);
-                // optional: store in state
-                // setGeneratedCode(result.code);
               } catch (err) {
                 console.error("❌ Discount code generation failed", err);
               }
@@ -166,7 +162,7 @@ export default function SlotMachine({ onFinish }) {
           };
 
           maybeAddSticker();
-          maybeGenerateDiscount(); // fire and forget
+          maybeGenerateDiscount();
 
           confetti({
             particleCount: 100,
@@ -175,7 +171,6 @@ export default function SlotMachine({ onFinish }) {
             colors: ['#CCFF00', '#00fff7', '#ffffff'],
           });
 
-          // ✅ send email here, after reward is known
           if (email && !alreadyClaimed) {
             submitEmail(final);
           }
@@ -199,7 +194,6 @@ export default function SlotMachine({ onFinish }) {
 
     return () => clearInterval(interval);
   }, [spinning]);
-
 
   const startSpin = () => {
     setSpinning(true);

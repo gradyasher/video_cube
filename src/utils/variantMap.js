@@ -1,4 +1,4 @@
-export const FREE_STICKER_VARIANT_ID = "gid://shopify/ProductVariant/43239305937035";
+export const FREE_STICKER_VARIANT_ID = "gid://shopify/ProductVariant/43239305937035"; 
 ///43239305937035 <<< the one i just copy/pasted
 
 export const variantMap = {

@@ -1,4 +1,5 @@
 // server.js
+
 import express from "express";
 import multer from "multer";
 import cors from "cors";
@@ -14,6 +15,7 @@ import { triggerMailchimpJourney } from "./api/mailchimp.js";
 import generateDiscount from "./api/generate-discount.js"; // ✅ adjust if needed
 import { generateNewCartId } from "./src/utils/shopifyUtils.server.js"; // adjust path if needed
 import { hasStickerInCart } from "./src/utils/cartUtils.js";
+import { FREE_STICKER_VARIANT_ID } from "./src/utils/variantMap.js"
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -459,11 +461,10 @@ app.post("/api/mailchimp/referral-opened", async (req, res) => {
 // server.js
 app.post("/api/add-free-sticker", async (req, res) => {
   const { cartId } = req.body;
-
+  console.log()
   if (!cartId) return res.status(400).json({ error: "Missing cartId" });
 
   try {
-    // 🔍 Query cart contents
     const query = `
       query {
         cart(id: "${cartId}") {
@@ -491,16 +492,18 @@ app.post("/api/add-free-sticker", async (req, res) => {
       body: JSON.stringify({ query }),
     });
 
-    const data = await cartRes.json();
+    // check if shopify has sticker in their cart
+    const { data } = await cartRes.json();
+    const lines = data?.cart?.lines?.edges?.map((edge) => edge.node) || [];
 
-    if (hasStickerInCart) {
+    if (hasStickerInCart({ lines }, FREE_STICKER_VARIANT_ID)) {
       return res.status(409).json({ message: "Sticker already in cart" });
     }
 
     // ➕ Add it
     const mutation = `
       mutation {
-        cartLinesAdd(cartId: "${cartId}", lines: [{ merchandiseId: "${FREE_STICKER_ID}", quantity: 1 }]) {
+        cartLinesAdd(cartId: "${cartId}", lines: [{ merchandiseId: "${FREE_STICKER_VARIANT_ID}", quantity: 1 }]) {
           cart { id }
         }
       }

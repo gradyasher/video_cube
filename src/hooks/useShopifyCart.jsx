@@ -1,4 +1,5 @@
 // src/hooks/useShopifyCart.jsx
+
 import { useEffect, useState } from "react";
 import { shopifyFetch } from "../utils/shopifyClient";
 
@@ -304,6 +305,7 @@ export default function useShopifyCart() {
     addItem,
     removeItem,
     fetchCart,
+    createCart,
     updateItemQuantity,
   };
 }
