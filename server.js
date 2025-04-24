@@ -4,6 +4,7 @@ import multer from "multer";
 import cors from "cors";
 import path from "path";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { spawn } from "child_process";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
@@ -11,6 +12,8 @@ import { generateQRCode } from "./src/utils/generateQRCode.js"; // adjust path a
 import subscribeHandler from "./api/subscribe.js"; // or require(...) if using CJS
 import { triggerMailchimpJourney } from "./api/mailchimp.js";
 import generateDiscount from "./api/generate-discount.js"; // ✅ adjust if needed
+import { generateNewCartId } from "./src/utils/shopifyUtils.server.js"; // adjust path if needed
+import { hasStickerInCart } from "./src/utils/cartUtils.js";
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -23,6 +26,7 @@ dotenv.config();
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
+app.use(cookieParser());
 app.use("/api/generate-discount", generateDiscount);
 
 function isRateLimited(ip) {
@@ -451,6 +455,131 @@ app.post("/api/mailchimp/referral-opened", async (req, res) => {
     res.status(500).json({ error: "Internal error", details: err.message });
   }
 });
+
+// server.js
+app.post("/api/add-free-sticker", async (req, res) => {
+  const { cartId } = req.body;
+
+  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
+
+  try {
+    // 🔍 Query cart contents
+    const query = `
+      query {
+        cart(id: "${cartId}") {
+          lines(first: 20) {
+            edges {
+              node {
+                merchandise {
+                  ... on ProductVariant {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const cartRes = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    const data = await cartRes.json();
+
+    if (hasStickerInCart) {
+      return res.status(409).json({ message: "Sticker already in cart" });
+    }
+
+    // ➕ Add it
+    const mutation = `
+      mutation {
+        cartLinesAdd(cartId: "${cartId}", lines: [{ merchandiseId: "${FREE_STICKER_ID}", quantity: 1 }]) {
+          cart { id }
+        }
+      }
+    `;
+
+    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation }),
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Failed to add free sticker", err);
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+
+
+app.post("/api/delete-cart", async (req, res) => {
+  const { cartId } = req.body;
+  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
+
+  try {
+    const query = `
+      query {
+        cart(id: "${cartId}") {
+          lines(first: 50) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+    `;
+    const res1 = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query }),
+    });
+    const json1 = await res1.json();
+    const lineIds = json1.data.cart.lines.edges.map((e) => e.node.id);
+
+    // Step 2: remove those lines from the cart
+    const mutation = `
+      mutation {
+        cartLinesRemove(cartId: "${cartId}", lineIds: ${JSON.stringify(lineIds)}) {
+          cart {
+            id
+          }
+        }
+      }
+    `;
+    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation }),
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Shopify cart cleanup failed:", err);
+    return res.status(500).json({ error: "Failed to clear cart on Shopify" });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`🧠 Backend running on http://localhost:${PORT}`);

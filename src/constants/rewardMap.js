@@ -1,15 +1,15 @@
 export const rewardMap = {
-  /*"free sticker pack": {
+  "free sticker with purchase!": {
     redirect: "/shop",
     message: "redirecting you to the shop...",
     isEmailReward: false,
-  },*/
+  },/*
   "10% off code": {
     code: "10OFFDGENR8", // or generate dynamically if desired
     message: "here's your exclusive discount code 💸",
     isEmailReward: false,
     // no redirect
-  },/*
+  },
   "glitch reading": {
     redirect: "/glitch-reading",
     message: "redirecting you to your glitch reading...",

@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react(), glsl()],
   server: {
     proxy: {
-      '/api': 'http://localhost:3001', // if running your own local server, not needed for Vercel
+      '/api': 'http://localhost:3001',
     },
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
 });

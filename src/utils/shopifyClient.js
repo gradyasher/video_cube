@@ -1,6 +1,7 @@
 // src/utils/shopifyClient.js
 const SHOPIFY_DOMAIN = "nii0fj-0q.myshopify.com/"; // ← change this
-const STOREFRONT_TOKEN = "3d2a490d6826cfbe3aba8e1cd27c720a"; // ← use your real token
+const STOREFRONT_TOKEN = "84cc57920de83e93dcb61c5cebb962fa"; // ← use your real token
+
 
 const endpoint = `https://${SHOPIFY_DOMAIN}/api/2023-07/graphql.json`;
 

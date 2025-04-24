@@ -1,70 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { shopifyFetch } from "../utils/shopifyClient";
 import { variantMap } from "../utils/variantMap";
 
-export default function Catalog() {
+export default function Catalog({ shopifyProducts }) {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const variantIds = Object.values(variantMap)
-        .map((item) => {
-          const firstAvailableId = Object.values(item.variants)[0]; // pick first available variant
-          return `"${firstAvailableId}"`;
-        })
-        .filter(Boolean);
+  const preferredSizes = ["L", "XL", "M", "S"];
 
-      const query = `
-        {
-          nodes(ids: [${variantIds.join(",")}]) {
-            ... on ProductVariant {
-              id
-              title
-              price {
-                amount
-                currencyCode
-              }
-              product {
-                title
-              }
-            }
-          }
-        }
-      `;
+  const products = Object.entries(variantMap).map(([model, val]) => {
+    const variantId = preferredSizes.map((size) => val.variants[size]).find(Boolean);
+    if (!variantId) return null;
 
-      try {
-        const data = await shopifyFetch(query); // ✅ fetch data
-        const productData = data.nodes.map((variant) => {
-          const modelEntry = Object.entries(variantMap).find(
-            ([, val]) =>
-              Object.values(val.variants).includes(variant.id)
-          );
+    const matchingProduct = shopifyProducts.find((p) => p.id === variantId);
+    if (!matchingProduct) return null;
 
-          const modelPath = modelEntry?.[0];
-          const image = modelEntry?.[1]?.image;
-
-          return {
-            id: variant.id,
-            name: variant.product.title,
-            price: `$${parseFloat(variant.price.amount).toFixed(2)}`,
-            model: modelPath,
-            image,
-          };
-        });
-
-
-        setProducts(productData);
-      } catch (err) {
-        console.error("❌ Failed to load products:", err);
-      }
+    return {
+      id: matchingProduct.id,
+      name: matchingProduct.title || matchingProduct.name, // just in case
+      price: matchingProduct.price,
+      model,
+      image: val.image || "/assets/placeholder.png",
     };
-
-    fetchProducts();
-  }, []);
+  }).filter(Boolean);
 
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
@@ -114,6 +73,7 @@ export default function Catalog() {
             >
               <img
                 src={product.image}
+                alt={product.name}
                 onLoad={() => setLoaded(true)}
                 style={{
                   opacity: loaded ? 1 : 0,

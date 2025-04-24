@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import useShopifyCart from "../hooks/useShopifyCart";
 
-const CartContext = createContext();
+const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const cartHooks = useShopifyCart();
@@ -38,14 +38,17 @@ export function CartProvider({ children }) {
     }
   }, [cart]); // ✅ still works once on mount, skips after it's set
 
+  const contextData = { ...cartHooks, cartCount, isOffline }
 
   return (
-    <CartContext.Provider value={{ ...cartHooks, cartCount, isOffline }}>
+    <CartContext.Provider value={contextData}>
       {children}
     </CartContext.Provider>
   );
 }
 
 export function useCartContext() {
-  return useContext(CartContext);
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCartContext must be used within <CartProvider>");
+  return ctx;
 }

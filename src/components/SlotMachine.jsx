@@ -5,12 +5,16 @@ import confetti from 'canvas-confetti';
 import { useNavigate, Link } from "react-router-dom";
 import { rewardMap } from "../constants/rewardMap";
 import RewardFollowUp from "./RewardFollowUp";
+import useShopifyCart from "../hooks/useShopifyCart";
+import { resetCartCompletely } from "/src/utils/cartUtils";
+
 
 const rewardPool = Object.keys(rewardMap);
 // calculate longest reward width in characters
 const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b));
 const approxCharWidth = 20; // monospace, estimate ~20px per character
 const minWidth = `${longestReward.length * approxCharWidth}px`;
+
 
 export default function SlotMachine({ onFinish }) {
   const navigate = useNavigate();
@@ -22,52 +26,71 @@ export default function SlotMachine({ onFinish }) {
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [alreadyClaimed, setAlreadyClaimed] = useState(false);
   const [countdown, setCountdown] = useState(null);
+  const { fetchCart, addItem, cartId, cart, createCart } = useShopifyCart(); // name may differ
+
+  useEffect(() => {
+    const ensureCart = async () => {
+      if (!cartId) {
+        console.log("📦 No cart ID — creating cart before proceeding");
+        const newCart = await createCart();
+        if (!newCart?.id) {
+          console.error("❌ Failed to create cart");
+        }
+      }
+    };
+    ensureCart();
+    }, [cartId]);
 
   // Replace your existing submitEmail with this one:
-const submitEmail = async (finalRewardOverride = null) => {
-  if (!/\S+@\S+\.\S+/.test(email)) {
-    alert("please enter a valid email");
-    return;
-  }
+    const submitEmail = async (finalRewardOverride = null) => {
+      if (!/\S+@\S+\.\S+/.test(email)) {
+        alert("please enter a valid email");
+        return;
+      }
 
-  const rewardToSend = finalRewardOverride || finalReward;
+      const rewardToSend = finalRewardOverride || finalReward;
 
-  if (!rewardToSend) {
-    console.warn("❌ Tried to submit email without final reward.");
-    return;
-  }
+      if (!rewardToSend || !cartId) {
+        console.warn("❌ Missing reward or cartId during email submission.");
+        console.log("rewardToSend: ", rewardToSend)
+        console.log("cartId: ", cartId)
+        return;
+      }
 
-  try {
-    const res = await fetch("/api/subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, reward: rewardToSend }),
-    });
+      try {
+        const res = await fetch("/api/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            reward: rewardToSend,
+            cartId,
+          }),
+        });
 
-    const result = await res.json();
+        const result = await res.json();
 
-    if (!res.ok) {
-      throw new Error(result.error || "subscription failed");
-    }
+        if (!res.ok) {
+          throw new Error(result.error || "subscription failed");
+        }
 
-    console.log("✅ email submitted to Mailchimp:", email, "→", rewardToSend);
+        console.log("✅ email + reward submitted:", email, "→", rewardToSend);
 
-    if (result.alreadyClaimed) {
-      setAlreadyClaimed(true);
-      setTimeout(() => {
-        navigate("/");
-      }, 3000);
-      return;
-    }
+        if (result.alreadyClaimed) {
+          setAlreadyClaimed(true);
+          setTimeout(() => {
+            navigate("/");
+          }, 3000);
+          return;
+        }
 
-    setEmailSubmitted(true);
-  } catch (err) {
-    console.error("❌ submission error:", err);
-    alert("Something went wrong while subscribing.");
-  }
-};
+        setEmailSubmitted(true);
+      } catch (err) {
+        console.error("❌ submission error:", err);
+        alert("Something went wrong while subscribing.");
+      }
+    };
+
 
 
   useEffect(() => {
@@ -93,6 +116,37 @@ const submitEmail = async (finalRewardOverride = null) => {
           setFinalReward(final);
           onFinish(final);
 
+          const maybeAddSticker = async () => {
+            if (final !== "free sticker with purchase!") return;
+
+            if (!cartId) {
+              console.warn("🚫 No cart ID found — skipping sticker add.");
+              return;
+            }
+
+            try {
+              const res = await fetch("/api/add-free-sticker", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cartId }),
+              });
+
+              const result = await res.json();
+
+              if (res.status === 409) {
+                console.log("🛑 Sticker already in cart — backend prevented duplicate");
+              } else if (res.ok) {
+                console.log("🧃 Sticker added to cart via backend");
+              } else {
+                console.error("❌ Backend failed to add sticker:", result?.error || result);
+              }
+            } catch (err) {
+              console.error("❌ Failed to call add-free-sticker endpoint:", err);
+            }
+          };
+
+
+
           const maybeGenerateDiscount = async () => {
             if (final === "10% off code" && email && !alreadyClaimed) {
               try {
@@ -111,6 +165,7 @@ const submitEmail = async (finalRewardOverride = null) => {
             }
           };
 
+          maybeAddSticker();
           maybeGenerateDiscount(); // fire and forget
 
           confetti({
@@ -169,6 +224,10 @@ const submitEmail = async (finalRewardOverride = null) => {
           boxSizing: "border-box"
         }}
       >
+        <button onClick={resetCartCompletely}>
+          reset shopify cart (dev only)
+        </button>
+
         <motion.img
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}

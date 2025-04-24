@@ -1,9 +1,24 @@
+// src/api/subscribe.js
+
+const rewardCache = new Map();
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method not allowed" });
   }
 
-  const { email, reward } = req.body;
+  const { email, reward, cartId } = req.body;
+
+  if (!email || !reward || !cartId) {
+    return res.status(400).json({ error: "Missing email, reward, or cartId" });
+  }
+
+  // 🛡️ Prevent multiple reward claims per cart
+  const claimedKey = `claimedRewardForCart_${cartId}`;
+  if (rewardCache.has(claimedKey)) {
+    console.log(`⚠️ Reward already claimed for cart ${cartId}`);
+    return res.status(200).json({ message: "Reward already granted" });
+  }
 
   // 🧼 Skip burner domains (optional but wise)
   const bannedDomains = ["tempmail.com", "mailinator.com", "10minutemail.com"];
@@ -15,6 +30,7 @@ export default async function handler(req, res) {
   // 🧪 MOCK Mailchimp in development
   if (process.env.NODE_ENV === "development") {
     console.log(`[dev mode] Skipping Mailchimp – fake-subbed ${email} for ${reward}`);
+    rewardCache.set(claimedKey, true); // ✅ prevent repeat claims
     res.setHeader(
       "Set-Cookie",
       `claimedMysteryReward=${encodeURIComponent(email)}; Path=/; Max-Age=31536000; HttpOnly`
@@ -32,20 +48,12 @@ export default async function handler(req, res) {
   const cookie = req.headers.cookie || "";
   const claimedCookie = cookie.split("; ").find((c) => c.startsWith("claimedMysteryReward="));
 
-  // if cookie exists, AND the incoming email matches, then block
   if (claimedCookie) {
-    const body = req.body; // or however you parse the request
     const claimedEmail = decodeURIComponent(claimedCookie.split("=")[1]);
-
-    if (body.email === claimedEmail) {
+    if (email === claimedEmail) {
       return res.status(429).json({ message: "You've already claimed this reward." });
     }
   }
-
-
-  // 🛡️ Optional: block by IP (can be spoofed, but still useful for soft rate-limiting)
-  // const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  // if (hasClaimedRecently(ip)) return res.status(429).json({ message: "Too many claims from this IP." });
 
   const data = {
     email_address: email,
@@ -64,9 +72,9 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
-    // ✅ Gracefully handle "already subscribed"
     if (result.title === "Member Exists") {
       console.log("👻 Already subscribed:", email);
+      rewardCache.set(claimedKey, true); // ✅ still mark reward as claimed
       return res.status(200).json({
         message: "Already subscribed",
         alreadyClaimed: true,
@@ -75,6 +83,7 @@ export default async function handler(req, res) {
     }
 
     if (response.status === 200 || response.status === 201) {
+      rewardCache.set(claimedKey, true); // ✅ success → mark as claimed
       res.setHeader(
         "Set-Cookie",
         `claimedMysteryReward=true; Path=/; Max-Age=${60 * 60 * 24}; HttpOnly`
