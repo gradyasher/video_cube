@@ -1,6 +1,9 @@
 // src/api/subscribe.js
+import { sendRewardEmail } from "../src/utils/sendRewardEmail.js"
+import { rewardMessages } from "../src/constants/rewardMap.js"
 
 const rewardCache = new Map();
+
 
 export default async function handler(req, res) {
   // must be a post method
@@ -9,6 +12,8 @@ export default async function handler(req, res) {
   }
 
   const { email, reward, cartId } = req.body;
+
+  const forceSend = process.env.FORCE_EMAIL_SEND === "true";
 
   // missing necessary data?
   if (!email || !reward || !cartId) {
@@ -29,8 +34,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Temporary email domains are not allowed." });
   }
 
+
   // 🧪 MOCK Mailchimp in development
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development" && !forceSend) {
     console.log(`[dev mode] Skipping Mailchimp – fake-subbed ${email} for ${reward}`);
     rewardCache.set(claimedKey, true); // ✅ prevent repeat claims
     res.setHeader(
@@ -38,6 +44,45 @@ export default async function handler(req, res) {
       `claimedMysteryReward=${encodeURIComponent(email)}; Path=/; Max-Age=31536000; HttpOnly`
     );
     return res.status(200).json({ message: "Mock subscription success", reward });
+  }
+
+  // 🧪 In dev mode, skip Mailchimp API call unless forced — but still send test email
+  console.log("🧪 ENV:", {
+    NODE_ENV: process.env.NODE_ENV,
+    FORCE_EMAIL_SEND: process.env.FORCE_EMAIL_SEND,
+  });
+
+  if (process.env.NODE_ENV === "development" && !forceSend) {
+    rewardCache.set(claimedKey, true);
+    console.log('hit block');
+
+    const rewardInfo = rewardMessages[reward];
+    if (rewardInfo) {
+      console.log(`[dev mode] Sending ETHEREAL test email for: ${reward}`);
+      try {
+        console.log("🧪 rewardInfo object at send time:", rewardInfo);
+
+        const rewardSlug = reward.toLowerCase().replace(/\s+/g, '-');
+        await sendRewardEmail({
+          to: email,
+          subject: rewardInfo.subject,
+          text: rewardInfo.text,
+          html: rewardInfo.html,
+          rewardSlug
+        });
+      } catch (emailErr) {
+        console.error("❌ Error sending reward email:", emailErr);
+        return res.status(500).json({ message: "Email send failed", error: emailErr.message });
+      }
+
+    }
+
+    res.setHeader(
+      "Set-Cookie",
+      `claimedMysteryReward=${encodeURIComponent(email)}; Path=/; Max-Age=31536000; HttpOnly`
+    );
+
+    return res.status(200).json({ message: "Test email sent (dev mode)", reward });
   }
 
   const API_KEY = process.env.MAILCHIMP_API_KEY;
@@ -86,6 +131,11 @@ export default async function handler(req, res) {
       });
     }
 
+    if (!rewardMessages[reward] && rewardMap[reward]?.isEmailReward) {
+      console.warn(`⚠️ isEmailReward true but no email content defined for: ${reward}`);
+    }
+
+
     // success
     if (response.status === 200 || response.status === 201) {
       rewardCache.set(claimedKey, true); // ✅ success → mark as claimed
@@ -93,6 +143,19 @@ export default async function handler(req, res) {
         "Set-Cookie",
         `claimedMysteryReward=true; Path=/; Max-Age=${60 * 60 * 24}; HttpOnly`
       );
+
+      const rewardInfo = rewardMessages[reward];
+      if (rewardInfo) {
+        console.log(`📤 Sending reward email for: ${reward}`);
+
+        // 🔁 Swap this for actual email provider logic (Resend, Postmark, etc.)
+        await sendRewardEmail({
+          to: email,
+          subject: rewardInfo.subject,
+          text: rewardInfo.text,
+          html: rewardInfo.html,
+        });
+      }
       return res.status(200).json({ message: "Subscribed successfully!" });
     } else {
       console.error("Mailchimp error:", result);

@@ -12,6 +12,8 @@ import MysteryRewardPage from "./pages/MysteryRewardPage";
 import GlitchReading from "./pages/GlitchReading";
 import GlitchReadingShare from "./pages/GlitchReadingShare";
 import GlitchReadingCapture from "./components/GlitchReadingCapture";
+import AdventureTest from "./pages/AdventureTest.jsx";
+
 import { AnimatePresence } from "framer-motion";
 
 mailchimp.setConfig({
@@ -114,6 +116,7 @@ export default function App() {
         <Route path="/glitch-reading" element={<GlitchReading />} />
         <Route path="/capture" element={<GlitchReadingCapture />} />
         <Route path="/glitch-reading/share/:id" element={<GlitchReadingShare />} />
+        <Route path="/adventure" element={<AdventureTest />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
