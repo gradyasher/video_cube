@@ -12,7 +12,7 @@ import MysteryRewardPage from "./pages/MysteryRewardPage";
 import GlitchReading from "./pages/GlitchReading";
 import GlitchReadingShare from "./pages/GlitchReadingShare";
 import GlitchReadingCapture from "./components/GlitchReadingCapture";
-import AdventureTest from "./pages/AdventureTest.jsx";
+import AdventurePage from "./pages/AdventurePage.jsx";
 
 import { AnimatePresence } from "framer-motion";
 
@@ -116,7 +116,7 @@ export default function App() {
         <Route path="/glitch-reading" element={<GlitchReading />} />
         <Route path="/capture" element={<GlitchReadingCapture />} />
         <Route path="/glitch-reading/share/:id" element={<GlitchReadingShare />} />
-        <Route path="/adventure" element={<AdventureTest />} />
+        <Route path="/adventure" element={<AdventurePage />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (
