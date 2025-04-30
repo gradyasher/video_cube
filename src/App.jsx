@@ -13,6 +13,9 @@ import GlitchReading from "./pages/GlitchReading";
 import GlitchReadingShare from "./pages/GlitchReadingShare";
 import GlitchReadingCapture from "./components/GlitchReadingCapture";
 import AdventurePage from "./pages/AdventurePage.jsx";
+import StreamPage from "./pages/StreamPage.jsx";
+import DiscordPage from "./pages/DiscordPage.jsx";
+import AboutPage from "./pages/AboutPage.jsx";
 
 import { AnimatePresence } from "framer-motion";
 
@@ -117,6 +120,9 @@ export default function App() {
         <Route path="/capture" element={<GlitchReadingCapture />} />
         <Route path="/glitch-reading/share/:id" element={<GlitchReadingShare />} />
         <Route path="/adventure" element={<AdventurePage />} />
+        <Route path="/stream" element={<StreamPage />} />
+        <Route path="/discord" element={<DiscordPage />} />
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (

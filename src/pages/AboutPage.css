@@ -1,0 +1,65 @@
+.about-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  font-family: 'Helvetica', sans-serif;
+  color: #CCDE01;
+}
+
+.about-gif {
+  width: 100%;
+  max-width: 640px;
+  margin: 2rem auto;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+
+.background-video {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6) contrast(1.2);
+  z-index: 0;
+}
+
+.about-overlay {
+  position: relative;
+  z-index: 2;
+  padding: 4rem 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: left;
+  backdrop-filter: blur(4px);
+}
+
+.about-title {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 12px #CCDE01;
+  text-align: center;
+}
+
+.about-content p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  font-size: 1.1rem;
+  color: #e0faff;
+}
+
+.outro-line {
+  font-style: italic;
+  font-size: 1.2rem;
+  color: #CCDE01;
+  text-shadow: 0 0 10px #00cfff;
+}
+
+.footer-nav {
+  margin-top: 3rem;
+  text-align: center;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}

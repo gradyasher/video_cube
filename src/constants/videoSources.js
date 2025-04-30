@@ -1,11 +1,11 @@
 export const videoSources = [
-  "/videos/clip 1.mp4",
-  "/videos/clip 2.mp4",
-  "/videos/clip 3.mp4",
-  "/videos/clip 4.mp4",
-  "/videos/clip 5.mp4",
-  "/videos/clip 6.mp4",
-  "/videos/clip 7.mp4",
+  "/videos/cube_thumbnails/clip 1.mp4",
+  "/videos/cube_thumbnails/clip 2.mp4",
+  "/videos/cube_thumbnails/clip 3.mp4",
+  "/videos/cube_thumbnails/clip 4.mp4",
+  "/videos/cube_thumbnails/clip 5.mp4",
+  "/videos/cube_thumbnails/clip 6.mp4",
+  "/videos/cube_thumbnails/clip 7.mp4",
 ];
 
 export const hostedVideoLinks = [

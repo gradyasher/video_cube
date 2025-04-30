@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const menuItems = [
-  { src: "/assets/a b o u t_processed.png", link: null },
-  { src: "/assets/d i s c o r d_processed.png", link: null },
+  { src: "/assets/a b o u t_processed.png", link: "/about" },
+  { src: "/assets/d i s c o r d_processed.png", link: "/discord" },
   { src: "/assets/s h o p_processed.png", link: "/shop" },
   { src: "/assets/s i g n a l_processed.png", link: null },
-  { src: "/assets/s t r e a m_processed.png", link: null },
+  { src: "/assets/s t r e a m_processed.png", link: "/stream" },
 ];
 
 export default function HamburgerMenu() {
