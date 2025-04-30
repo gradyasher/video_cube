@@ -3,6 +3,7 @@ import React, { forwardRef } from "react";
 const VideoLayer = forwardRef(({ src, zIndex = 0, id, muted = false, loop = false }, ref) => {
   return (
     <video
+      key={src}
       ref={ref}
       id={id}
       src={src}

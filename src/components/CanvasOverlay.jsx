@@ -1,11 +1,15 @@
 import React, { useEffect, useRef } from "react";
 
-export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
+export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitchComplete }) {
   const canvasRef = useRef(null);
+  const runningRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !fgVideo || !bgVideo) return;
+    if (!canvas || !fgVideo || !bgVideo || !triggerGlitch || runningRef.current) return;
+
+    runningRef.current = true;
+    let animationFrame;
 
     const ctx = canvas.getContext("2d");
     let width = window.innerWidth;
@@ -13,7 +17,6 @@ export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
     canvas.width = width;
     canvas.height = height;
 
-    // Persistent offscreen canvas to accumulate mask
     const persistentMask = document.createElement("canvas");
     persistentMask.width = width;
     persistentMask.height = height;
@@ -39,12 +42,9 @@ export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
           fontSize: 200,
           type: Math.random() < positiveChance ? "add" : "subtract",
         };
-
-        // Add text to the persistent mask
         maskCtx.font = `bold ${word.fontSize}px Arial`;
         maskCtx.fillStyle = "white";
         maskCtx.fillText(word.text, word.x, word.y);
-
         words.push(word);
       }
       spawnY += 20;
@@ -54,23 +54,16 @@ export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-
-      // Draw the foreground video first (faint noise layer)
       if (fgVideo.readyState >= 2) {
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(fgVideo, 0, 0, width, height);
       }
-
-      // Draw the background video
       if (bgVideo.readyState >= 2) {
         ctx.save();
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(bgVideo, 0, 0, width, height);
-
-        // Apply the persistent mask to clip the bg video to accumulated letters
         ctx.globalCompositeOperation = "destination-in";
         ctx.drawImage(persistentMask, 0, 0);
-
         ctx.restore();
       }
     };
@@ -80,32 +73,53 @@ export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
-
       persistentMask.width = width;
       persistentMask.height = height;
     };
 
-    let interval;
-    if (glitchActive) {
-      fgVideo.pause();
-      bgVideo.pause();
-      bgVideo.currentTime = 0;
+    fgVideo.pause();
+    bgVideo.pause();
+    bgVideo.currentTime = 0;
 
-      interval = setInterval(() => {
+    maskCtx.clearRect(0, 0, width, height);
+    canvas.style.opacity = "1";
+    spawnY = 0;
+    words.length = 0;
+    positiveChance = 0.25;
+
+    let frame = 0;
+    const maxFrames = 50;
+
+    const render = () => {
+      if (spawnY < height) {
         spawnWords();
-        draw();
-      }, 30);
+      } else {
+        const progress = (frame - maxFrames) / 20;
+        const clamped = Math.min(progress, 1);
+        canvas.style.opacity = `${1 - clamped}`;
+      }
 
-      window.addEventListener("resize", resize);
-    } else {
-      ctx.clearRect(0, 0, width, height);
-    }
+      draw();
+      frame++;
+
+      if (frame < maxFrames + 20) {
+        animationFrame = requestAnimationFrame(render);
+      } else {
+        canvas.style.opacity = "0";
+        runningRef.current = false;
+        onGlitchComplete?.();
+      }
+    };
+
+    requestAnimationFrame(render);
+    window.addEventListener("resize", resize);
 
     return () => {
-      if (interval) clearInterval(interval);
+      cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", resize);
+      runningRef.current = false;
     };
-  }, [glitchActive, fgVideo, bgVideo]);
+  }, [triggerGlitch, fgVideo, bgVideo, onGlitchComplete]);
 
   return (
     <canvas
@@ -118,6 +132,8 @@ export default function CanvasOverlay({ glitchActive, fgVideo, bgVideo }) {
         height: "100%",
         zIndex: 2,
         pointerEvents: "none",
+        transition: "opacity 1s ease",
+        opacity: triggerGlitch ? 1 : 0,
       }}
     />
   );
