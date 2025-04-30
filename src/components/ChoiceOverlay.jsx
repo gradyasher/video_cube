@@ -1,36 +1,94 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ChoiceOverlay({ onChoice }) {
-  const choices = [
-    { id: "choice1", icon: "/assets/icon1.png" },
-    { id: "choice2", icon: "/assets/icon2.png" },
-    { id: "choice3", icon: "/assets/icon3.png" },
-  ];
+  const [choices, setChoices] = useState([]);
+
+  useEffect(() => {
+    const generateRandomText = () => {
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+      const len = Math.floor(Math.random() * 3) + 1;
+      return Array.from({ length: len }, () =>
+        chars[Math.floor(Math.random() * chars.length)]
+      ).join("");
+    };
+
+    const directions = ["top", "bottom", "left", "right"];
+
+    const generated = Array.from({ length: 6 }, () => {
+      const left = Math.floor(Math.random() * 80 + 10);
+      const top = Math.floor(Math.random() * 80 + 10);
+      const dir = directions[Math.floor(Math.random() * directions.length)];
+      const hue = Math.floor(Math.random() * 360);
+
+      let initialTransform = "";
+      switch (dir) {
+        case "top":
+          initialTransform = `translate(-50%, -200%)`;
+          break;
+        case "bottom":
+          initialTransform = `translate(-50%, 200%)`;
+          break;
+        case "left":
+          initialTransform = `translate(-200%, -50%)`;
+          break;
+        case "right":
+          initialTransform = `translate(200%, -50%)`;
+          break;
+      }
+
+      return {
+        text: generateRandomText(),
+        left,
+        top,
+        hue,
+        initialTransform,
+      };
+    });
+
+    // Start off-screen
+    setChoices(
+      generated.map(choice => ({
+        ...choice,
+        transform: choice.initialTransform,
+      }))
+    );
+
+    // Animate into place on next frame
+    requestAnimationFrame(() => {
+      setChoices(prev =>
+        prev.map(choice => ({
+          ...choice,
+          transform: "translate(-50%, -50%)",
+        }))
+      );
+    });
+  }, []);
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        zIndex: 4,
-        display: "flex",
-        gap: "20px",
-      }}
-    >
-      {choices.map((choice) => (
-        <img
-          key={choice.id}
-          src={choice.icon}
-          alt={choice.id}
+    <div style={{ position: "absolute", inset: 0, zIndex: 10 }}>
+      {choices.map((choice, i) => (
+        <button
+          key={i}
           onClick={onChoice}
           style={{
-            width: "100px",
-            height: "100px",
+            position: "absolute",
+            left: `${choice.left}%`,
+            top: `${choice.top}%`,
+            transform: choice.transform,
+            background: "transparent",
+            border: "none",
+            fontSize: "8rem",
+            color: `hsl(${choice.hue}, 100%, 50%)`,
+            fontFamily: "Arial, sans-serif",
             cursor: "pointer",
+            transition: "transform 0.3s linear",
+            outline: "none",
           }}
-        />
+          onMouseEnter={e => (e.currentTarget.style.transform = "translate(-50%, -50%) scale(1.4)")}
+          onMouseLeave={e => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+        >
+          {choice.text}
+        </button>
       ))}
     </div>
   );

@@ -24,8 +24,8 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
 
     const words = [];
     let spawnY = 0;
-    let spawnRate = 30;
-    let positiveChance = 0.25;
+    let spawnRate = 5;
+    let positiveChance = 50;
 
     const randomText = () => {
       const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -43,14 +43,24 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
           type: Math.random() < positiveChance ? "add" : "subtract",
         };
         maskCtx.font = `bold ${word.fontSize}px Arial`;
-        maskCtx.fillStyle = "white";
+
+        if (word.type === "subtract") {
+          maskCtx.globalCompositeOperation = "source-over";
+          maskCtx.fillStyle = "white"; // adds to the mask (reveals background)
+        } else if (word.type === "add") {
+          maskCtx.globalCompositeOperation = "destination-out";
+          maskCtx.fillStyle = "black"; // removes from the mask (restores fg)
+        }
+
         maskCtx.fillText(word.text, word.x, word.y);
         words.push(word);
       }
-      spawnY += 20;
+
+      spawnY += 9;
       if (spawnY > height) spawnY = 0;
       if (positiveChance > 0) positiveChance -= 0.005;
     };
+
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
@@ -88,7 +98,7 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
     positiveChance = 0.25;
 
     let frame = 0;
-    const maxFrames = 50;
+    const maxFrames = 300;
 
     const render = () => {
       if (spawnY < height) {
@@ -102,7 +112,7 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
       draw();
       frame++;
 
-      if (frame < maxFrames + 20) {
+      if (frame < maxFrames) {
         animationFrame = requestAnimationFrame(render);
       } else {
         canvas.style.opacity = "0";

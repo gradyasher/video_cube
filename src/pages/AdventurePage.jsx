@@ -139,7 +139,7 @@ export default function AdventurePage() {
         bgVideo={bgRef.current}
         onGlitchComplete={handleGlitchFinish}
       />
-      {showChoices && <ChoiceOverlay onChoice={handleChoice} />}
+      {showChoices && <ChoiceOverlay key={videoCycle} onChoice={handleChoice} />}
     </div>
   );
 }
