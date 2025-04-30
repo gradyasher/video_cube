@@ -13,13 +13,14 @@ const initialVideos = [
 
 export default function AdventurePage() {
   const [remainingVideos, setRemainingVideos] = useState(initialVideos.slice(2));
-  const [videoCycle, setVideoCycle] = useState(0); // 🔑 force re-render
+  const [videoCycle, setVideoCycle] = useState(0);
   const foregroundSrcRef = useRef(initialVideos[0]);
   const backgroundSrcRef = useRef(initialVideos[1]);
   const glitchActiveRef = useRef(false);
   const [showChoices, setShowChoices] = useState(false);
   const fgRef = useRef(null);
   const bgRef = useRef(null);
+  const isFinalTransition = useRef(false); // 🧠
 
   useEffect(() => {
     const fg = fgRef.current;
@@ -40,15 +41,53 @@ export default function AdventurePage() {
       oldBg.currentTime = 0;
     }
 
-    glitchActiveRef.current = true;
-    setShowChoices(false);
+    if (isFinalTransition.current) {
+      // ✅ Final transition: skip glitch, fade out directly
+      setShowChoices(false);
+
+      const fg = fgRef.current;
+      if (fg) {
+        fg.style.transition = "opacity 1s ease";
+        fg.style.opacity = "0";
+      }
+
+      const canvas = document.querySelector("canvas");
+      if (canvas) {
+        canvas.style.transition = "opacity 1s ease";
+        canvas.style.opacity = "0";
+      }
+
+      const overlay = document.createElement("div");
+      overlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        opacity: 0;
+        transition: opacity 1s ease;
+        z-index: 999;
+        pointer-events: none;
+      `;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => {
+        overlay.style.opacity = 1;
+      });
+
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1200);
+    } else {
+      // ✅ Normal case: trigger glitch
+      glitchActiveRef.current = true;
+      setShowChoices(false);
+    }
   };
 
   const handleGlitchFinish = () => {
-    // Step 1: Promote background to foreground
     foregroundSrcRef.current = backgroundSrcRef.current;
 
-    // Step 2: Start new foreground
     requestAnimationFrame(() => {
       const newFg = fgRef.current;
       if (newFg) {
@@ -57,32 +96,22 @@ export default function AdventurePage() {
       }
     });
 
-    // Step 3: Final transition check
     const nextPool = remainingVideos.filter(v => v !== backgroundSrcRef.current);
     if (nextPool.length === 0) {
-      console.log("Adventure complete!");
+      console.log("Final video playing — no more background.");
 
-      // Remove bg video to avoid stale DOM reuse
-      const bg = bgRef.current;
-      if (bg) {
-        bg.pause();
-        bg.removeAttribute("src");
-        bg.load();
-      }
       backgroundSrcRef.current = null;
-
+      isFinalTransition.current = true; // 🧠 key flag
       glitchActiveRef.current = false;
-      setVideoCycle(c => c + 1); // 🔁 force full video DOM rerender
+      setVideoCycle(c => c + 1);
       return;
     }
 
-    // Step 4: Preload next background
     const nextBg = nextPool[Math.floor(Math.random() * nextPool.length)];
     backgroundSrcRef.current = nextBg;
     setRemainingVideos(nextPool.filter(v => v !== nextBg));
-
     glitchActiveRef.current = false;
-    setVideoCycle(c => c + 1); // 🔁 force re-render so keys change
+    setVideoCycle(c => c + 1);
   };
 
   return (
@@ -96,7 +125,6 @@ export default function AdventurePage() {
         loop
         id="bgVideo"
       />
-
       <VideoLayer
         key={`fg-${videoCycle}`}
         ref={fgRef}
@@ -105,7 +133,6 @@ export default function AdventurePage() {
         muted
         id="fgVideo"
       />
-
       <CanvasOverlay
         triggerGlitch={glitchActiveRef.current}
         fgVideo={fgRef.current}
