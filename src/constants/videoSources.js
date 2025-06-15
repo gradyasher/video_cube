@@ -31,3 +31,15 @@ export const bgVids = [
   "/videos/bg_videos/bg 9.mp4",
   "/videos/bg_videos/bg 10.mp4",
 ];
+
+export const glitchReadings = [
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327137/1_s8irys.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327156/2_l2v7eo.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327157/3_ultc92.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327157/4_bt1du4.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327167/5_ho0bht.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327188/6_p7zvut.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327186/7_lhswle.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327181/8_uvdte9.mp4",
+  "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327190/9_chvnqj.mp4"
+];

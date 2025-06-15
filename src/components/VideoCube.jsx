@@ -2,8 +2,9 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { videoSources } from "../constants/videoSources";
+import { damp } from "three/src/math/MathUtils.js";
 
-export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady }) {
+export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady }) {
   const mesh = useRef();
   const { gl, camera, size } = useThree();
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -13,12 +14,21 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   const [flickerIndex, setFlickerIndex] = useState(null);
   const [flickerValue, setFlickerValue] = useState(0);
   const [flickerColor, setFlickerColor] = useState(new THREE.Color());
+  const [entered, setEntered] = useState(false);
   const flickerTimeout = useRef(null);
   const nextTriggerTimeout = useRef(null);
   const animationFrame = useRef(null);
+  const targetPosition = new THREE.Vector3(0, 0, 0);
+
+  useEffect(() => {
+    if (showScene && mesh.current) {
+      mesh.current.position.set(0, -2, 5); // entrance start
+      setEntered(true);
+    }
+  }, [showScene]);
 
   const scheduleFlicker = () => {
-    const interval = Math.random() * 500 + 250; // 0.25–0.75 sec
+    const interval = Math.random() * 500 + 250;
     nextTriggerTimeout.current = setTimeout(() => {
       const randomFace = Math.floor(Math.random() * 6);
       const pastelHue = Math.random();
@@ -61,7 +71,7 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
   }, []);
 
   const videoTextures = useMemo(() => {
-    return videoSources.map((src, i) => {
+    return videoSources.map((src) => {
       const video = document.createElement("video");
       video.src = src;
       video.crossOrigin = "anonymous";
@@ -109,8 +119,12 @@ export default function VideoCube({ onFaceClick, setFogColor, fogColor, fogColor
     return () => window.removeEventListener("pointerdown", handleClick);
   }, [gl, camera, raycaster, mouse, onFaceClick]);
 
-  useFrame(() => {
-    mesh.current.rotation.z += 0.001; 
+  useFrame((_, delta) => {
+    if (entered && mesh.current) {
+      mesh.current.position.lerp(targetPosition, 1 - Math.exp(-5 * delta));
+    }
+
+    mesh.current.rotation.z += 0.001;
     mesh.current.rotation.y += 0.002;
     mesh.current.rotation.x += 0.0025;
 

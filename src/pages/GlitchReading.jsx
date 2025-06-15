@@ -8,7 +8,7 @@ import TitleOverlay from "../components/TitleOverlay";
 import VHSShaderMaterial from "../components/VHSShaderMaterial";
 import VolumetricScattering from "../components/VolumetricScattering";
 import BackgroundVideo from "../components/BackgroundVideo";
-import { hostedVideoLinks } from "../constants/videoSources";
+import { glitchReadings } from "../constants/videoSources";
 import { bgVids } from "../constants/videoSources";
 import GlitchReadingContents from "../components/GlitchReadingContents";
 import LoadingScreen from "../components/LoadingScreen";
@@ -50,12 +50,12 @@ export default function GlitchReading({ isReferral = false }) {
 
 
   const [sphereVideoUrl] = useState(() => {
-    const index = Math.floor(Math.random() * hostedVideoLinks.length);
-    return hostedVideoLinks[index];
+    const index = Math.floor(Math.random() * glitchReadings.length);
+    return glitchReadings[index];
   });
 
   const [bgVideoUrl] = useState(() => {
-    const index = Math.floor(Math.random() * hostedVideoLinks.length);
+    const index = Math.floor(Math.random() * glitchReadings.length);
     return bgVids[index];
   });
 
@@ -155,9 +155,15 @@ export default function GlitchReading({ isReferral = false }) {
         <GlitchReadingContents
           sphereVideoUrl={sphereVideoUrl}
           bgVideoUrl={bgVideoUrl}
-          onSphereReady={() => setSphereReady(true)}
-          onBgReady={() => setBgReady(true)}
+          onSphereReady={() => {
+            setSphereReady(true);
+          }}
+          onBgReady={() => {
+            setBgReady(true);
+          }}
+          showScene={showMain}
         />
+
       </Canvas>
 
       {showMain && !recording && !videoUrl && (

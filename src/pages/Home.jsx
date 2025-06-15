@@ -1,3 +1,4 @@
+
 import React from "react";
 import { extend } from "@react-three/fiber";
 import * as THREE from "three";
@@ -65,6 +66,7 @@ export default function App() {
       {showMain && <HamburgerMenu />}
       <TitleOverlay text="Dgenr8."/>
       <MainScene
+        showScene={showMain}
         onFaceClick={(index) => {
           setActiveVideoIndex(index);
           setHasClickedCube(true);

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
@@ -8,7 +9,7 @@ import VideoCube from "./VideoCube";
 import VHSShaderMaterial from "./VHSShaderMaterial";
 import VolumetricScattering from "./VolumetricScattering";
 
-export default function MainScene({ onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady, onBgReady }) {
+export default function MainScene({ showScene, onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady, onBgReady }) {
   return (
     <Canvas camera={{ position: [0, 0, 5] }} fog={{ color: '#000000', near: 2, far: 12 }}>
       <fog attach="fog" args={["#000000", 2, 12]} />
@@ -17,12 +18,14 @@ export default function MainScene({ onFaceClick, setFogColor, fogColor, fogColor
       <directionalLight position={[0, 0, 2]} intensity={1.2} color={"white"} />
       <BackgroundVideo onReady={onBgReady} />
       <VideoCube
+        showScene={showScene}
         onCubeReady={onCubeReady}
         onFaceClick={onFaceClick}
         setFogColor={setFogColor}
         fogColor={fogColor}
         fogColorTarget={fogColorTarget}
       />
+
       <EffectComposer>
         <Vignette eskil={false} offset={0.3} darkness={1.4} />
       </EffectComposer>

@@ -15,6 +15,7 @@ import generateDiscount from "./api/generate-discount.js"; // ✅ adjust if need
 import { generateNewCartId } from "./src/utils/shopifyUtils.server.js"; // adjust path if needed
 import { hasStickerInCart } from "./src/utils/cartUtils.js";
 import { FREE_STICKER_VARIANT_ID } from "./src/utils/variantMap.js"
+import signalHandler from "./api/signal.js";
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -75,6 +76,8 @@ app.post("/api/subscribe", (req, res) => {
   subscribeHandler(req, res);
   console.log("✅ /api/subscribe endpoint wired up");
 });
+
+app.post("/api/signal", (req, res) => signalHandler(req, res));
 
 app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
   console.log("📩 Received POST /api/process-glitch-video");
@@ -236,10 +239,12 @@ app.post("/api/stitch-frames", async (req, res) => {
     "-i", qrPath,
     "-filter_complex",
     [
-      "[0:v]scale=1080:-1,crop=1080:1350[main]",             // safe scaling + crop
-      "[1:v]scale=1080:1350[overlay]",                        // full-screen overlay
-      "[2:v]scale=100:100[qr]",                               // QR code scaled down
-      "[main][overlay]overlay=0:0[tmp1]; [tmp1][qr]overlay=W-w-30:H-h-30"
+      "[0:v]scale='if(gt(a,1080/1350),-1,1080)':'if(gt(a,1080/1350),1350,-1)'[scaled]",
+      "[scaled]crop=1080:1350:(in_w-1080)/2:(in_h-1350)/2[main]",
+      "[1:v]scale=1080:1350[overlay]",
+      "[2:v]scale=100:100[qr]",
+      "[main][overlay]overlay=0:0[tmp1]",
+      "[tmp1][qr]overlay=W-w-30:H-h-30"
     ].join(";"),
     "-c:v", "libx264",
     "-preset", "slow",

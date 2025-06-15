@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import VideoClip from "../components/VideoClip"
 import "./AboutPage.css";
 
 export default function AboutPage() {
@@ -29,7 +30,7 @@ export default function AboutPage() {
         <div className="about-content">
           <p>
             <strong>Dgenr8</strong> is the audiovisual manifestation of the Next Place.
-            We know where this is going—and it might not be “pretty”—but it will be radical.
+            We know where this is going,, it might not be “pretty”.. but it will be radical.
           </p>
 
           <VideoClip src={webms[0]} />
@@ -85,19 +86,5 @@ export default function AboutPage() {
         </div>
       </motion.div>
     </div>
-  );
-}
-
-// 🔁 Reusable video component
-function VideoClip({ src }) {
-  return (
-    <video
-      autoPlay
-      loop
-      muted
-      playsInline
-      src={src}
-      className="about-gif"
-    />
   );
 }

@@ -3,6 +3,7 @@
   width: 100vw;
   height: 100vh;
   overflow-y: auto;
+  letter-spacing: -0.125em;
   font-family: 'Helvetica', sans-serif;
   color: #CCDE01;
 }
@@ -13,7 +14,6 @@
   margin: 2rem auto;
   display: block;
   border-radius: 6px;
-  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
 }
 
 
@@ -46,8 +46,9 @@
 .about-content p {
   margin-bottom: 1.5rem;
   line-height: 1.6;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   color: #e0faff;
+  font-family: 'Helvetica', sans-serif; /* or your custom font */
 }
 
 .outro-line {

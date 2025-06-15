@@ -8,7 +8,6 @@ const initialVideos = [
   "/videos/adventure_vids/scene1.mp4",
   "/videos/adventure_vids/scene2.mp4",
   "/videos/adventure_vids/scene3.mp4",
-  "/videos/adventure_vids/scene6.mp4",
 ];
 
 export default function AdventurePage() {
