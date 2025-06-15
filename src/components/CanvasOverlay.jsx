@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
+
 export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitchComplete }) {
   const canvasRef = useRef(null);
   const runningRef = useRef(false);
@@ -24,7 +25,7 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
 
     const words = [];
     let spawnY = 0;
-    let spawnRate = 5;
+    let spawnRate = 1;
     let positiveChance = 50;
 
     const randomText = () => {
@@ -34,15 +35,18 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
     };
 
     const spawnWords = () => {
+      const fontSize = Math.floor(window.innerWidth * 0.2);
+
       for (let i = 0; i < spawnRate; i++) {
         const word = {
-          x: Math.random() * width * 1.5 - 500,
-          y: spawnY + (Math.random() - 0.5) * 500,
+          x: Math.random() * (width - fontSize * 1.5),
+          y: Math.random() * (height) + fontSize / 2,
           text: randomText(),
-          fontSize: 200,
+          fontSize,
           type: Math.random() < positiveChance ? "add" : "subtract",
         };
-        maskCtx.font = `bold ${word.fontSize}px Arial`;
+
+        maskCtx.font = `${word.fontSize}px Arial`;
 
         if (word.type === "subtract") {
           maskCtx.globalCompositeOperation = "source-over";
@@ -56,7 +60,7 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
         words.push(word);
       }
 
-      spawnY += 9;
+      spawnY += 1;
       if (spawnY > height) spawnY = 0;
       if (positiveChance > 0) positiveChance -= 0.005;
     };
@@ -98,7 +102,8 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
     positiveChance = 0.25;
 
     let frame = 0;
-    const maxFrames = 300;
+    const maxFrames = 500;
+    let timeout;
 
     const render = () => {
       if (spawnY < height) {
@@ -121,6 +126,14 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
       }
     };
 
+    timeout = setTimeout(() => {
+      console.warn("⏰ Glitch timeout reached — force exiting");
+      canvas.style.opacity = "0";
+      runningRef.current = false;
+      onGlitchComplete?.();
+    }, 5000);
+
+
     requestAnimationFrame(render);
     window.addEventListener("resize", resize);
 
@@ -128,6 +141,7 @@ export default function CanvasOverlay({ triggerGlitch, fgVideo, bgVideo, onGlitc
       cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", resize);
       runningRef.current = false;
+      clearTimeout(timeout);
     };
   }, [triggerGlitch, fgVideo, bgVideo, onGlitchComplete]);
 

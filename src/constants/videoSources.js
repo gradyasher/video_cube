@@ -32,6 +32,15 @@ export const bgVids = [
   "/videos/bg_videos/bg 10.mp4",
 ];
 
+
+
+export const adventureVids = [
+  "/videos/adventure_vids/scene1.mp4",
+  "/videos/adventure_vids/scene2.mp4",
+  "/videos/adventure_vids/scene3.mp4",
+];
+
+
 export const glitchReadings = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327137/1_s8irys.mp4",
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327156/2_l2v7eo.mp4",

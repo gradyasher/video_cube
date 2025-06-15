@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-export default function ChoiceOverlay({ onChoice }) {
+export default function ChoiceOverlay({ onChoice, animationKey }) {
   const [choices, setChoices] = useState([]);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function ChoiceOverlay({ onChoice }) {
       };
     });
 
-    // Start off-screen
+    // Set initial transform positions
     setChoices(
       generated.map(choice => ({
         ...choice,
@@ -53,16 +53,18 @@ export default function ChoiceOverlay({ onChoice }) {
       }))
     );
 
-    // Animate into place on next frame
+    // Force layout -> then animate in
     requestAnimationFrame(() => {
-      setChoices(prev =>
-        prev.map(choice => ({
-          ...choice,
-          transform: "translate(-50%, -50%)",
-        }))
-      );
+      requestAnimationFrame(() => {
+        setChoices(prev =>
+          prev.map(choice => ({
+            ...choice,
+            transform: "translate(-50%, -50%)",
+          }))
+        );
+      });
     });
-  }, []);
+  }, [animationKey]);
 
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 10 }}>
@@ -77,15 +79,20 @@ export default function ChoiceOverlay({ onChoice }) {
             transform: choice.transform,
             background: "transparent",
             border: "none",
-            fontSize: "8rem",
+            fontSize: "clamp(2rem, 8vw, 6rem)",
             color: `hsl(${choice.hue}, 100%, 50%)`,
             fontFamily: "Arial, sans-serif",
             cursor: "pointer",
-            transition: "transform 0.3s linear",
+            transition: "transform 1s ease",
             outline: "none",
+            willChange: "transform",
           }}
-          onMouseEnter={e => (e.currentTarget.style.transform = "translate(-50%, -50%) scale(1.4)")}
-          onMouseLeave={e => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+          onMouseEnter={e =>
+            (e.currentTarget.style.transform = "translate(-50%, -50%) scale(1.4)")
+          }
+          onMouseLeave={e =>
+            (e.currentTarget.style.transform = "translate(-50%, -50%)")
+          }
         >
           {choice.text}
         </button>

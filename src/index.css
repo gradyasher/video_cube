@@ -69,6 +69,12 @@ html, body, #root {
   overflow: hidden;
 }
 
+@font-face {
+  font-family: "VCR";
+  src: url("/fonts/VCR_OSD_MONO.ttf") format("truetype");
+  font-display: swap;
+}
+
 
 @media (prefers-color-scheme: light) {
   :root {
