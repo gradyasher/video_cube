@@ -3,12 +3,10 @@ import { motion } from "framer-motion";
 import "./DiscordPage.css";
 
 export default function DiscordPage() {
+  const base = import.meta.env.BASE_URL;
+
   return (
     <div className="discord-container">
-      <video autoPlay loop muted playsInline className="background-video">
-        <source src="/videos/glitch-loop.mp4" type="video/mp4" />
-      </video>
-
       <motion.div
         className="discord-overlay"
         initial={{ opacity: 0, y: 40 }}
@@ -26,7 +24,7 @@ export default function DiscordPage() {
           rel="noopener noreferrer"
           className="discord-cta"
         >
-          enter the portal
+          join discord
         </a>
 
         <div className="footer-nav">

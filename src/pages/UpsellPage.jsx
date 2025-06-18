@@ -41,7 +41,7 @@ export default function UpsellPage() {
       </p>
 
       <motion.img
-        src="/assets/thumbnails/stickers.png"
+        src= {import.meta.env.BASE_URL + "assets/thumbnails/stickers.png" }
         alt="checkout illustration"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

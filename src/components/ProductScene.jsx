@@ -1,4 +1,3 @@
-// src/components/ShopScene.jsx
 import React, { useRef, useState, Suspense, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
@@ -8,16 +7,17 @@ import VHSShaderMaterial from "./VHSShaderMaterial";
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom";
 
+// Define base URL for assets
+const base = import.meta.env.BASE_URL;
 
-useGLTF.preload("/models/2troofz.glb");
-useGLTF.preload("/models/allover2.glb");
-useGLTF.preload("/models/hoodie1.glb");
-
+useGLTF.preload(`${base}models/2troofz.glb`);
+useGLTF.preload(`${base}models/allover2.glb`);
+useGLTF.preload(`${base}models/hoodie1.glb`);
 
 const models = [
-  "/models/2troofz.glb",
-  "/models/allover2.glb",
-  "/models/hoodie1.glb"
+  `${base}models/2troofz.glb`,
+  `${base}models/allover2.glb`,
+  `${base}models/hoodie1.glb`,
 ];
 
 function FloatingShirt({ modelPath }) {
@@ -36,12 +36,10 @@ function FloatingShirt({ modelPath }) {
 
   useFrame(() => {
     if (ref.current) {
-      // distance from center determines spin speed
       const distance = Math.abs(ref.current.position.x);
-      const spinSpeed = THREE.MathUtils.lerp(0.03, 0.01, 1 - (Math.min(distance / 5, 1)*15));
+      const spinSpeed = THREE.MathUtils.lerp(0.03, 0.01, 1 - (Math.min(distance / 5, 1) * 15));
 
       ref.current.rotation.y += spinSpeed;
-      // smooth slide-in
       ref.current.position.lerp(targetPos.current, 0.1);
     }
   });
@@ -65,7 +63,7 @@ function ProductScene({ initialModel }) {
   const handleNext = () => {
     const nextIndex = (currentModelIndex + 1) % models.length;
     const nextModel = models[nextIndex];
-    navigate(`/shop/view?model=${encodeURIComponent(nextModel)}`); // 👈 URL-driven
+    navigate(`/shop/view?model=${encodeURIComponent(nextModel)}`);
   };
 
   const handlePrev = () => {
@@ -87,42 +85,23 @@ function ProductScene({ initialModel }) {
           height: "100%",
         }}
       >
-
-        {/* Key Light - strong and angled */}
         <ambientLight intensity={2} />
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={2.2}
-          color="#ffffff"
-        />
-
-        {/* Fill Light - softer and opposite the key */}
-        <directionalLight
-          position={[-5, 2, 5]}
-          intensity={0.5}
-          color="#ccccff"
-        />
-
-        {/* Rim Light - behind for glow outline */}
-        <directionalLight
-          position={[0, 3, -5]}
-          intensity={0.8}
-          color="#ffccdd"
-        />
+        <directionalLight position={[5, 5, 5]} intensity={2.2} color="#ffffff" />
+        <directionalLight position={[-5, 2, 5]} intensity={0.5} color="#ccccff" />
+        <directionalLight position={[0, 3, -5]} intensity={0.8} color="#ffccdd" />
 
         <BackgroundVideo />
         <Suspense fallback={null}>
-          {models.map((path, index) => (
-            index === currentModelIndex && (
-              <FloatingShirt key={path} modelPath={path} />
-            )
-          ))}
+          {models.map((path, index) =>
+            index === currentModelIndex && <FloatingShirt key={path} modelPath={path} />
+          )}
         </Suspense>
         <VHSShaderMaterial />
         <EffectComposer>
           <Vignette eskil={false} offset={0.3} darkness={1.4} />
         </EffectComposer>
       </Canvas>
+
       {/* UI Arrows */}
       <div
         style={{
@@ -136,7 +115,7 @@ function ProductScene({ initialModel }) {
         onClick={handlePrev}
       >
         <img
-          src="/assets/left_arrow.png"
+          src={`${base}assets/left_arrow.png`}
           alt="Previous shirt"
           style={{ width: "40px", height: "40px" }}
         />
@@ -153,7 +132,7 @@ function ProductScene({ initialModel }) {
         onClick={handleNext}
       >
         <img
-          src="/assets/right_arrow.png"
+          src={`${base}assets/right_arrow.png`}
           alt="Next shirt"
           style={{ width: "40px", height: "40px" }}
         />
@@ -161,7 +140,6 @@ function ProductScene({ initialModel }) {
     </div>
   );
 }
-
 
 const MemoizedProductScene = React.memo(ProductScene);
 export default MemoizedProductScene;

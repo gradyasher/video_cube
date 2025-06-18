@@ -47,10 +47,6 @@ export default function EmailPage() {
 
   return (
     <div className="signal-container">
-      <video autoPlay loop muted playsInline className="background-video">
-        <source src="/videos/glitch-loop.mp4" type="video/mp4" />
-      </video>
-
       <motion.div
         className="signal-overlay"
         initial={{ opacity: 0, y: 30 }}

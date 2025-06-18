@@ -36,7 +36,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
           }}
         >
           <img
-            src="/assets/loading.png"
+            src= {import.meta.env.BASE_URL + "assets/loading.png"}
             alt="loading"
             style={{
               width: "300px",

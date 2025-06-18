@@ -268,13 +268,23 @@ app.post("/api/stitch-frames", async (req, res) => {
     console.log("✅ Video stitched:", outputPath);
     res.json({ url: `/generated/${outputFilename}` });
 
+    // Clean up frame directory
     try {
       fs.rmSync(frameDir, { recursive: true, force: true });
       console.log("🧼 Cleaned up frames:", frameDir);
     } catch (err) {
       console.warn("⚠️ Failed to delete frames folder:", err.message);
     }
+
+    // Clean up QR code
+    try {
+      fs.unlinkSync(qrPath);
+      console.log("🧽 Deleted QR code:", qrPath);
+    } catch (err) {
+      console.warn("⚠️ Failed to delete QR code:", err.message);
+    }
   });
+
 });
 
 app.post("/api/log-referral", (req, res) => {

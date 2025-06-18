@@ -1,11 +1,13 @@
+const base = import.meta.env.BASE_URL;
+
 export const videoSources = [
-  "/videos/cube_thumbnails/clip 1.mp4",
-  "/videos/cube_thumbnails/clip 2.mp4",
-  "/videos/cube_thumbnails/clip 3.mp4",
-  "/videos/cube_thumbnails/clip 4.mp4",
-  "/videos/cube_thumbnails/clip 5.mp4",
-  "/videos/cube_thumbnails/clip 6.mp4",
-  "/videos/cube_thumbnails/clip 7.mp4",
+  `${base}videos/cube_thumbnails/clip 1.mp4`,
+  `${base}videos/cube_thumbnails/clip 2.mp4`,
+  `${base}videos/cube_thumbnails/clip 3.mp4`,
+  `${base}videos/cube_thumbnails/clip 4.mp4`,
+  `${base}videos/cube_thumbnails/clip 5.mp4`,
+  `${base}videos/cube_thumbnails/clip 6.mp4`,
+  `${base}videos/cube_thumbnails/clip 7.mp4`,
 ];
 
 export const hostedVideoLinks = [
@@ -18,28 +20,24 @@ export const hostedVideoLinks = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1743440347/weva45gilksokv3fsge3.mp4",
 ];
 
-
 export const bgVids = [
-  "/videos/bg_videos/bg 1.mp4",
-  "/videos/bg_videos/bg 2.mp4",
-  "/videos/bg_videos/bg 3.mp4",
-  "/videos/bg_videos/bg 4.mp4",
-  "/videos/bg_videos/bg 5.mp4",
-  "/videos/bg_videos/bg 6.mp4",
-  "/videos/bg_videos/bg 7.mp4",
-  "/videos/bg_videos/bg 8.mp4",
-  "/videos/bg_videos/bg 9.mp4",
-  "/videos/bg_videos/bg 10.mp4",
+  `${base}videos/bg_videos/bg 1.mp4`,
+  `${base}videos/bg_videos/bg 2.mp4`,
+  `${base}videos/bg_videos/bg 3.mp4`,
+  `${base}videos/bg_videos/bg 4.mp4`,
+  `${base}videos/bg_videos/bg 5.mp4`,
+  `${base}videos/bg_videos/bg 6.mp4`,
+  `${base}videos/bg_videos/bg 7.mp4`,
+  `${base}videos/bg_videos/bg 8.mp4`,
+  `${base}videos/bg_videos/bg 9.mp4`,
+  `${base}videos/bg_videos/bg 10.mp4`,
 ];
-
-
 
 export const adventureVids = [
-  "/videos/adventure_vids/scene1.mp4",
-  "/videos/adventure_vids/scene2.mp4",
-  "/videos/adventure_vids/scene3.mp4",
+  `${base}videos/adventure_vids/scene1.mp4`,
+  `${base}videos/adventure_vids/scene2.mp4`,
+  `${base}videos/adventure_vids/scene3.mp4`,
 ];
-
 
 export const glitchReadings = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/v1746327137/1_s8irys.mp4",

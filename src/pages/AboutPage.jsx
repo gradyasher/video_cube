@@ -1,22 +1,24 @@
 import React from "react";
 import { motion } from "framer-motion";
-import VideoClip from "../components/VideoClip"
+import VideoClip from "../components/VideoClip";
 import "./AboutPage.css";
 
 export default function AboutPage() {
+  const base = import.meta.env.BASE_URL;
+
   const webms = [
-    "/videos/about_webms/gorp_clip.webm",
-    "/videos/about_webms/icia_clip.webm",
-    "/videos/about_webms/madmans_clip.webm",
-    "/videos/about_webms/melatone_clip_1.webm",
-    "/videos/about_webms/melatone_clip_2.webm",
-    "/videos/about_webms/unseen_clip.webm",
+    `${base}videos/about_webms/gorp_clip.webm`,
+    `${base}videos/about_webms/icia_clip.webm`,
+    `${base}videos/about_webms/madmans_clip.webm`,
+    `${base}videos/about_webms/melatone_clip_1.webm`,
+    `${base}videos/about_webms/melatone_clip_2.webm`,
+    `${base}videos/about_webms/unseen_clip.webm`,
   ];
 
   return (
     <div className="about-container">
       <video autoPlay loop muted playsInline className="background-video">
-        <source src="/videos/glitch-loop.mp4" type="video/mp4" />
+        <source src={`${base}videos/glitch-loop.mp4`} type="video/mp4" />
       </video>
 
       <motion.div

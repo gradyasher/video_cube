@@ -225,7 +225,7 @@ export default function SlotMachine({ onFinish }) {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          src="./assets/soundbath.png"
+          src={import.meta.env.BASE_URL + "assets/soundbath.png"}
           alt="gongboi mascot"
           style={{ width: "100px", marginTop: "0rem" }}
         />

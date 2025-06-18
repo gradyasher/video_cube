@@ -6,6 +6,7 @@ import { Text } from "@react-three/drei";
 export default function GlitchReadingCapture() {
   const containerRef = useRef();
   const [capturing, setCapturing] = useState(false);
+  const base = import.meta.env.BASE_URL;
 
   useEffect(() => {
     if (!capturing) return;
@@ -37,15 +38,11 @@ export default function GlitchReadingCapture() {
           body: formData,
         });
 
-
-        // 🧠 Check response type before parsing JSON
         const contentType = res.headers.get("content-type") || "";
-
         if (!res.ok) {
-          const text = await res.text(); // get full error body if any
+          const text = await res.text();
           throw new Error(`Upload failed with status ${res.status}: ${text}`);
         }
-
         if (!contentType.includes("application/json")) {
           throw new Error("❌ Expected JSON but got: " + contentType);
         }
@@ -59,13 +56,10 @@ export default function GlitchReadingCapture() {
       }
     };
 
-
     recorder.start();
-
     setTimeout(() => {
       recorder.stop();
-    }, 2000); // 2 seconds
-
+    }, 2000);
   }, [capturing]);
 
   return (
@@ -113,7 +107,7 @@ export default function GlitchReadingCapture() {
               anchorY="middle"
               textAlign="center"
               letterSpacing={-0.13}
-              font="/fonts/ArialMT.woff"
+              font={`${base}fonts/ArialMT.woff`}
               material-toneMapped={false}
             >
               the sphere has{"\n"}chosen.

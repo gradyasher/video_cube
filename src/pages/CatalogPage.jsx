@@ -103,7 +103,7 @@ export default function CatalogPage({ openCart }) {
           }}
         >
           <img
-            src="/assets/loading.png"
+            src= {import.meta.env.BASE_URL + "assets/loading.png"}
             alt="loading"
             style={{ width: "150px", height: "auto", marginBottom: "1.5rem" }}
           />

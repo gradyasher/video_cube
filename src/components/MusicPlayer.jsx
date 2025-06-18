@@ -89,9 +89,10 @@ export default function MusicPlayer() {
         >
           <img
             src={
-              playing
-                ? "/assets/mute_button_stretch_glow.png"
-                : "/assets/play_button_stretch_glow.png"
+              import.meta.env.BASE_URL +
+              (playing
+                ? "assets/mute_button_stretch_glow.png"
+                : "assets/play_button_stretch_glow.png")
             }
             alt={playing ? "Mute" : "Play"}
             style={{

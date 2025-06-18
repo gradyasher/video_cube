@@ -21,7 +21,7 @@ export default function Catalog({ shopifyProducts }) {
       name: matchingProduct.title || matchingProduct.name, // just in case
       price: matchingProduct.price,
       model,
-      image: val.image || "/assets/placeholder.png",
+      image: val.image || import.meta.env.BASE_URL + "assets/placeholder.png",
     };
   }).filter(Boolean);
 

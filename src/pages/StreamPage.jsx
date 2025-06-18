@@ -6,31 +6,28 @@ const streamingLinks = [
   {
     name: "Spotify",
     url: "https://open.spotify.com/album/4p8NCRupG0VuCJHYSVirSY?referral=labelaffiliate&utm_source=1101lBjms5iQ&utm_medium=Indie_Distrokid&utm_campaign=labelaffiliate",
-    icon: "/icons/spotify.svg",
+    icon: {import.meta.env.BASE_URL + "icons/spotify.svg"},
   },
   {
     name: "Apple Music",
     url: "https://music.apple.com/us/album/cliq-b8-ep/1787129382",
-    icon: "/icons/applemusic.svg",
+    icon: {import.meta.env.BASE_URL + "icons/applemusic.svg" },
   },
   {
     name: "YouTube",
     url: "https://www.youtube.com/@dgenr8music",
-    icon: "/icons/youtube.svg",
+    icon: {import.meta.env.BASE_URL + "icons/youtube.svg"},
   },
   {
     name: "SoundCloud",
     url: "https://soundcloud.com/dgenrnation/i-use-2-b-like-u?si=11080ce4db50467d827a6f1ae9c4fcf3&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing",
-    icon: "/icons/soundcloud.svg",
+    icon: {import.meta.env.BASE_URL + "icons/soundcloud.svg"},
   },
 ];
 
 export default function StreamPage() {
   return (
     <div className="stream-container">
-      <video autoPlay loop muted playsInline className="background-video">
-        <source src="/videos/glitch-loop.mp4" type="video/mp4" />
-      </video>
 
       <motion.div
         className="overlay"

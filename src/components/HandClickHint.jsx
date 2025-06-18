@@ -17,7 +17,7 @@ export default function HandClickHint({ show }) {
       {shouldRender && (
         <motion.img
           key="hand"
-          src="/assets/win95-hand.png"
+          src={import.meta.env.BASE_URL + "assets/win95-hand.png"}
           alt="Click hint"
           initial={{ opacity: 0, x: 40, y: 40, scale: 1 }}
           animate={{
