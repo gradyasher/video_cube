@@ -21,6 +21,7 @@ export default function ProductPage({ openCart }) {
   const [productInfo, setProductInfo] = useState(null);
   const [selectedSize, setSelectedSize] = useState("L");
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [fadeState, setFadeState] = useState("hidden");
 
   const productEntry = variantMap[decodedModel];
   const mockups = productEntry?.mockups || [];
@@ -28,6 +29,15 @@ export default function ProductPage({ openCart }) {
   const variantId = hasVariants
     ? productEntry.variants[selectedSize]
     : productEntry?.variantId;
+
+  useEffect(() => {
+    if (lightboxSrc) {
+      requestAnimationFrame(() => {
+        setFadeState("fade-in");
+      });
+    }
+  }, [lightboxSrc]);
+
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -136,7 +146,9 @@ export default function ProductPage({ openCart }) {
               key={i}
               src={src}
               alt={`Mockup ${i + 1}`}
-              onClick={() => setLightboxSrc(src)}
+              onClick={() => {
+                setLightboxSrc(src);
+              }}
               className="mockup-img"
               style={{
                 height: "100px", // uniform height
@@ -171,7 +183,13 @@ export default function ProductPage({ openCart }) {
 
       {lightboxSrc && (
         <div
-          onClick={() => setLightboxSrc(null)}
+          onClick={() => {
+            setFadeState("fade-out");
+            setTimeout(() => {
+              setLightboxSrc(null);
+              setFadeState("hidden");
+            }, 300); // match transition duration
+          }}
           style={{
             position: "fixed",
             top: 0,
@@ -184,6 +202,9 @@ export default function ProductPage({ openCart }) {
             alignItems: "center",
             zIndex: 9999,
             cursor: "zoom-out",
+            opacity: fadeState === "fade-in" ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+            pointerEvents: fadeState === "hidden" ? "none" : "auto",
           }}
         >
           <img
@@ -194,11 +215,12 @@ export default function ProductPage({ openCart }) {
               maxHeight: "90%",
               borderRadius: "0.5rem",
               boxShadow: "0 0 20px rgba(0, 0, 0, 0.8)",
+              transition: "transform 0.3s ease-in-out",
+              transform: fadeState === "fade-in" ? "scale(1)" : "scale(0.98)",
             }}
           />
         </div>
       )}
-
 
       <TitleOverlay text="shop." />
 
