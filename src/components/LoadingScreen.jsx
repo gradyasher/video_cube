@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 
 export default function LoadingScreen({ isLoading }) {
 
@@ -52,7 +53,7 @@ export default function LoadingScreen({ isLoading }) {
 
             {/* logo */}
             <motion.img
-              src={import.meta.env.BASE_URL + "assets/loading.png"}
+              src={BASE_URL + "assets/loading.png"}
               alt="soundbath logo"
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.2, 0.7, 0.4, 0.8, 0.2] }}

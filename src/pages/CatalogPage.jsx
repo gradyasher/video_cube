@@ -9,6 +9,7 @@ import { EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useCartContext } from "../context/CartContext";
 import { Link } from "react-router-dom";
 import { shopifyFetch } from "../utils/shopifyClient";
+import { BASE_URL } from "../utils/base";
 
 export default function CatalogPage({ openCart }) {
   const { cart, cartCount, addItem, isOffline } = useCartContext();
@@ -103,7 +104,7 @@ export default function CatalogPage({ openCart }) {
           }}
         >
           <img
-            src= {import.meta.env.BASE_URL + "assets/loading.png"}
+            src= {BASE_URL + "assets/loading.png"}
             alt="loading"
             style={{ width: "150px", height: "auto", marginBottom: "1.5rem" }}
           />

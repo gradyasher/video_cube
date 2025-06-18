@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 
 export default function MusicPlayer() {
   const audioRef = useRef(null);
@@ -89,7 +90,7 @@ export default function MusicPlayer() {
         >
           <img
             src={
-              import.meta.env.BASE_URL +
+              BASE_URL +
               (playing
                 ? "assets/mute_button_stretch_glow.png"
                 : "assets/play_button_stretch_glow.png")

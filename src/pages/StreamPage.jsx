@@ -1,27 +1,28 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 import "./StreamPage.css";
 
 const streamingLinks = [
   {
     name: "Spotify",
     url: "https://open.spotify.com/album/4p8NCRupG0VuCJHYSVirSY?referral=labelaffiliate&utm_source=1101lBjms5iQ&utm_medium=Indie_Distrokid&utm_campaign=labelaffiliate",
-    icon: {import.meta.env.BASE_URL + "icons/spotify.svg"},
+    icon: BASE_URL + "icons/spotify.svg",
   },
   {
     name: "Apple Music",
     url: "https://music.apple.com/us/album/cliq-b8-ep/1787129382",
-    icon: {import.meta.env.BASE_URL + "icons/applemusic.svg" },
+    icon: BASE_URL + "icons/applemusic.svg" ,
   },
   {
     name: "YouTube",
     url: "https://www.youtube.com/@dgenr8music",
-    icon: {import.meta.env.BASE_URL + "icons/youtube.svg"},
+    icon: BASE_URL + "icons/youtube.svg",
   },
   {
     name: "SoundCloud",
     url: "https://soundcloud.com/dgenrnation/i-use-2-b-like-u?si=11080ce4db50467d827a6f1ae9c4fcf3&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing",
-    icon: {import.meta.env.BASE_URL + "icons/soundcloud.svg"},
+    icon: BASE_URL + "icons/soundcloud.svg",
   },
 ];
 

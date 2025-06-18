@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { variantMap } from "../utils/variantMap";
+import { BASE_URL } from "../utils/base";
 
 export default function Catalog({ shopifyProducts }) {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function Catalog({ shopifyProducts }) {
       name: matchingProduct.title || matchingProduct.name, // just in case
       price: matchingProduct.price,
       model,
-      image: val.image || import.meta.env.BASE_URL + "assets/placeholder.png",
+      image: val.image || BASE_URL + "assets/placeholder.png",
     };
   }).filter(Boolean);
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 
 export default function HandClickHint({ show }) {
   const [shouldRender, setShouldRender] = useState(false);
@@ -17,7 +18,7 @@ export default function HandClickHint({ show }) {
       {shouldRender && (
         <motion.img
           key="hand"
-          src={import.meta.env.BASE_URL + "assets/win95-hand.png"}
+          src={BASE_URL + "assets/win95-hand.png"}
           alt="Click hint"
           initial={{ opacity: 0, x: 40, y: 40, scale: 1 }}
           animate={{

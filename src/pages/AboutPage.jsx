@@ -1,10 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import VideoClip from "../components/VideoClip";
+import { BASE_URL } from "../utils/base";
 import "./AboutPage.css";
 
 export default function AboutPage() {
-  const base = import.meta.env.BASE_URL;
+  const base = BASE_URL;
 
   const webms = [
     `${base}videos/about_webms/gorp_clip.webm`,

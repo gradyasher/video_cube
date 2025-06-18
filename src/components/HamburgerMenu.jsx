@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { BASE_URL } from "../utils/base";
 
 const menuItems = [
-  { src: import.meta.env.BASE_URL + "assets/about_glow.png", link: "/about" },
-  { src: import.meta.env.BASE_URL + "assets/shop_glow.png", link: "/shop" },
-  { src: import.meta.env.BASE_URL + "assets/stream_glow.png", link: "/stream" },
-  { src: import.meta.env.BASE_URL + "assets/email_glow.png", link: "/email" },
-  { src: import.meta.env.BASE_URL + "assets/discord_glow.png", link: "/discord" }
+  { src: BASE_URL + "assets/about_glow.png", link: "/about" },
+  { src: BASE_URL + "assets/shop_glow.png", link: "/shop" },
+  { src: BASE_URL + "assets/stream_glow.png", link: "/stream" },
+  { src: BASE_URL + "assets/email_glow.png", link: "/email" },
+  { src: BASE_URL + "assets/discord_glow.png", link: "/discord" }
 ];
 
 
@@ -52,7 +53,7 @@ export default function HamburgerMenu() {
       >
         <img
           src={
-            import.meta.env.BASE_URL +
+            BASE_URL +
             (isOpen ? "assets/x_processed.png" : "assets/hambrgr_processed.png")
           }
           alt={isOpen ? "Close menu" : "Open menu"}
@@ -93,7 +94,7 @@ export default function HamburgerMenu() {
 
           {/* 📼 vhs horoscope */}
           <img
-            src={import.meta.env.BASE_URL + "assets/VHS_horoscope_glow.png"}
+            src={BASE_URL + "assets/VHS_horoscope_glow.png"}
             alt="vhs horoscope"
             onClick={handleVhsHoroscopeClick}
             style={{

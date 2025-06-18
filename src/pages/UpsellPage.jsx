@@ -3,6 +3,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 
 export default function UpsellPage() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function UpsellPage() {
       </p>
 
       <motion.img
-        src= {import.meta.env.BASE_URL + "assets/thumbnails/stickers.png" }
+        src= {BASE_URL + "assets/thumbnails/stickers.png" }
         alt="checkout illustration"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

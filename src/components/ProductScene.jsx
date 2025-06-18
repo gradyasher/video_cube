@@ -6,9 +6,10 @@ import BackgroundVideo from "./BackgroundVideo";
 import VHSShaderMaterial from "./VHSShaderMaterial";
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../utils/base";
 
 // Define base URL for assets
-const base = import.meta.env.BASE_URL;
+const base = BASE_URL;
 
 useGLTF.preload(`${base}models/2troofz.glb`);
 useGLTF.preload(`${base}models/allover2.glb`);

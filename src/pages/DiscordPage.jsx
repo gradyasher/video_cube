@@ -1,9 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import "./DiscordPage.css";
+import { BASE_URL } from "../utils/base";
 
 export default function DiscordPage() {
-  const base = import.meta.env.BASE_URL;
+  const base = BASE_URL;
 
   return (
     <div className="discord-container">

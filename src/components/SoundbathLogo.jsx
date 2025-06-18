@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { BASE_URL } from "../utils/base";
 
 export default function SoundbathLogo() {
   return (
@@ -16,7 +17,7 @@ export default function SoundbathLogo() {
       }}
     >
       <motion.img
-        src={import.meta.env.BASE_URL + "assets/soundbath.png"}
+        src={BASE_URL + "assets/soundbath.png"}
         alt="soundbath logo"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}

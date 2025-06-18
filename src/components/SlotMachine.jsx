@@ -7,6 +7,7 @@ import { rewardMap } from "../constants/rewardMap";
 import RewardFollowUp from "./RewardFollowUp";
 import { useCartContext } from "../context/CartContext";
 import { resetCartCompletely } from "/src/utils/cartUtils";
+import { BASE_URL } from "../utils/base";
 
 const rewardPool = Object.keys(rewardMap);
 const longestReward = rewardPool.reduce((a, b) => (a.length > b.length ? a : b));
@@ -225,7 +226,7 @@ export default function SlotMachine({ onFinish }) {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          src={import.meta.env.BASE_URL + "assets/soundbath.png"}
+          src={BASE_URL + "assets/soundbath.png"}
           alt="gongboi mascot"
           style={{ width: "100px", marginTop: "0rem" }}
         />

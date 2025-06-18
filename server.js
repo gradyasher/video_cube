@@ -215,7 +215,7 @@ app.post("/api/stitch-frames", async (req, res) => {
     return res.status(400).json({ error: "Missing sessionId" });
   }
 
-  const frameDir = path.resolve(`public/frames/${sessionId}`);
+  const frameDir = path.resolve(`.temp/frames/${sessionId}`);
   const outputFilename = `glitch-${sessionId}.mp4`;
   const outputPath = path.resolve(`public/generated/${outputFilename}`);
   const qrPath = await generateQRCode(sessionId); // generate QR

@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import GlitchReadingContents from "../components/GlitchReadingContents";
 import { Text } from "@react-three/drei";
+import { BASE_URL } from "../utils/base";
 
 export default function GlitchReadingCapture() {
   const containerRef = useRef();
   const [capturing, setCapturing] = useState(false);
-  const base = import.meta.env.BASE_URL;
+  const base = BASE_URL;
 
   useEffect(() => {
     if (!capturing) return;

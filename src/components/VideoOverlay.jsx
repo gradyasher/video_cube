@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { hostedVideoLinks } from "../constants/videoSources";
+import { BASE_URL } from "../utils/base";
 
 export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
@@ -36,7 +37,7 @@ export default function VideoOverlay({ activeVideoIndex, setActiveVideoIndex }) 
           }}
         >
           <img
-            src= {import.meta.env.BASE_URL + "assets/loading.png"}
+            src= {BASE_URL + "assets/loading.png"}
             alt="loading"
             style={{
               width: "300px",

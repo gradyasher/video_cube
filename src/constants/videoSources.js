@@ -1,4 +1,6 @@
-const base = import.meta.env.BASE_URL;
+import { BASE_URL } from "../utils/base";
+
+const base = BASE_URL;
 
 export const videoSources = [
   `${base}videos/cube_thumbnails/clip 1.mp4`,
