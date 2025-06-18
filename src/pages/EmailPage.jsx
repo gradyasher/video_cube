@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import "./SignalPage.css";
 
-export default function SignalPage() {
+export default function EmailPage() {
   const [sent, setSent] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -57,7 +57,7 @@ export default function SignalPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        <h1 className="signal-title">send a signal.📡</h1>
+        <h1 className="signal-title">join the email list for fun stuff. 📡</h1>
 
         {sent ? (
           <motion.p
@@ -65,15 +65,15 @@ export default function SignalPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            signal received. <br />
-            transmission will follow.
+            email received! <br />
+            thank u.
           </motion.p>
         ) : (
           <form className="signal-form" onSubmit={handleSubmit}>
             <input
               type="email"
               name="email"
-              placeholder="your signal (email)"
+              placeholder="your email"
               required
               value={formData.email}
               onChange={handleChange}
@@ -90,12 +90,12 @@ export default function SignalPage() {
 
             <textarea
               name="message"
-              placeholder="optional transmission..."
+              placeholder="optional message..."
               rows={4}
               value={formData.message}
               onChange={handleChange}
             />
-            <button type="submit">transmit</button>
+            <button type="submit">submit</button>
           </form>
         )}
 

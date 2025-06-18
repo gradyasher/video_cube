@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const menuItems = [
-  { src: "/assets/a b o u t_processed.png", link: "/about" },
-  { src: "/assets/d i s c o r d_processed.png", link: "/discord" },
-  { src: "/assets/s h o p_processed.png", link: "/shop" },
-  { src: "/assets/s i g n a l_processed.png", link: "/signal" },
-  { src: "/assets/s t r e a m_processed.png", link: "/stream" },
+  { src: "/assets/about_glow.png", link: "/about" },
+  { src: "/assets/shop_glow.png", link: "/shop" },
+  { src: "/assets/stream_glow.png", link: "/stream" },
+  { src: "/assets/email_glow.png", link: "/email" },
+  { src: "/assets/discord_glow.png", link: "/discord" }
 ];
+
 
 export default function HamburgerMenu() {
   const [isOpen, setIsOpen] = useState(false); // 🎉 internal again
@@ -88,7 +89,7 @@ export default function HamburgerMenu() {
 
           {/* 📼 vhs horoscope */}
           <img
-            src="/assets/vhs_horoscope.png"
+            src="/assets/VHS_horoscope_glow.png"
             alt="vhs horoscope"
             onClick={handleVhsHoroscopeClick}
             style={{

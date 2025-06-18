@@ -1,8 +1,12 @@
-// src/components/Title.jsx
 import React from "react";
 import { motion } from "framer-motion";
 
-export default function Title({ children, style = {}  }) {
+export default function Title({ children, style = {} }) {
+  // Responsive override
+  const responsiveFontSize = window.innerWidth < 768
+    ? "clamp(36px, 10vw, 64px)"
+    : "clamp(56px, 8vw, 128px)";
+
   return (
     <motion.h1
       initial={{ opacity: 0, y: -50 }}
@@ -11,7 +15,7 @@ export default function Title({ children, style = {}  }) {
       style={{
         fontFamily: "Helvetica, sans-serif",
         fontWeight: "400",
-        fontSize: "clamp(56px, 11vw, 144px)",
+        fontSize: responsiveFontSize,
         color: "#CCDE01",
         letterSpacing: "-0.12em",
         lineHeight: "1.2em",

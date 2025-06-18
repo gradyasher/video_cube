@@ -16,7 +16,7 @@ import AdventurePage from "./pages/AdventurePage.jsx";
 import StreamPage from "./pages/StreamPage.jsx";
 import DiscordPage from "./pages/DiscordPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
-import SignalPage from "./pages/SignalPage.jsx";
+import EmailPage from "./pages/EmailPage.jsx";
 
 import { AnimatePresence } from "framer-motion";
 
@@ -124,7 +124,7 @@ export default function App() {
         <Route path="/stream" element={<StreamPage />} />
         <Route path="/discord" element={<DiscordPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/signal" element={<SignalPage />} />
+        <Route path="/email" element={<EmailPage />} />
       </Routes>
 
       {location.pathname !== "/checkout" && (

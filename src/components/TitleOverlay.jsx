@@ -2,10 +2,9 @@
 import React from "react";
 import Title from "./Title";
 
-export default function TitleOverlay({ text}) {
+export default function TitleOverlay({ text, style = {}, titleStyle = {} }) {
   return (
     <div
-      className="title-wrapper"
       style={{
         position: "absolute",
         top: 0,
@@ -17,9 +16,10 @@ export default function TitleOverlay({ text}) {
         alignItems: "center",
         zIndex: 10,
         pointerEvents: "none",
+        ...style,
       }}
     >
-      <Title>{text}</Title>
+      <Title style={titleStyle}>{text}</Title>
     </div>
   );
 }

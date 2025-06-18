@@ -6,6 +6,7 @@ import { useCartContext } from "../context/CartContext";
 import { isVariantAvailable, getVariantDetails } from "../utils/shopifyUtils";
 import { variantMap } from "../utils/variantMap";
 
+
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -19,8 +20,10 @@ export default function ProductPage({ openCart }) {
 
   const [productInfo, setProductInfo] = useState(null);
   const [selectedSize, setSelectedSize] = useState("L");
+  const [lightboxSrc, setLightboxSrc] = useState(null);
 
   const productEntry = variantMap[decodedModel];
+  const mockups = productEntry?.mockups || [];
   const hasVariants = !!productEntry?.variants;
   const variantId = hasVariants
     ? productEntry.variants[selectedSize]
@@ -110,6 +113,43 @@ export default function ProductPage({ openCart }) {
 
       <ProductScene key={decodedModel} initialModel={decodedModel} />
 
+      {mockups.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "6.5rem", // place above size/cart row
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            flexDirection: "row",
+            gap: "1rem",
+            zIndex: 15,
+            overflowX: "auto",
+            padding: "0 1rem",
+            maxWidth: "90vw",
+            overflow: "visible",
+            pointerEvents: "auto",
+          }}
+        >
+          {mockups.map((src, i) => (
+            <img
+              key={i}
+              src={src}
+              alt={`Mockup ${i + 1}`}
+              onClick={() => setLightboxSrc(src)}
+              className="mockup-img"
+              style={{
+                height: "100px", // uniform height
+                borderRadius: "0.5rem",
+                boxShadow: "0 0 8px rgba(0, 0, 0, 0.3)",
+                background: "#fff",
+                flexShrink: 0,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <button
         onClick={openCart}
         style={{
@@ -129,69 +169,90 @@ export default function ProductPage({ openCart }) {
         cart ({cartCount})
       </button>
 
-      <div
-        style={{
-          position: "absolute",
-          top: "5vh",
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          zIndex: 20,
-          pointerEvents: "none",
-        }}
-      >
-        <TitleOverlay text="shop." />
-      </div>
+      {lightboxSrc && (
+        <div
+          onClick={() => setLightboxSrc(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            cursor: "zoom-out",
+          }}
+        >
+          <img
+            src={lightboxSrc}
+            alt="Full mockup"
+            style={{
+              maxWidth: "90%",
+              maxHeight: "90%",
+              borderRadius: "0.5rem",
+              boxShadow: "0 0 20px rgba(0, 0, 0, 0.8)",
+            }}
+          />
+        </div>
+      )}
+
+
+      <TitleOverlay text="shop." />
 
       {productInfo && (
         <div
           style={{
             position: "absolute",
-            bottom: "8.5rem",
+            top: "15vh",
             width: "100%",
             textAlign: "center",
             zIndex: 20,
             fontFamily: "monospace",
             fontSize: "1rem",
             color: "#fff",
+            pointerEvents: "none",
           }}
         >
-          <p style={{ marginBottom: "0.5rem" }}>{productInfo.name}</p>
-          <p style={{ color: "#CCDE01" }}>{productInfo.price}</p>
-
-          {hasVariants && (
-            <div style={{ marginTop: "0.5rem" }}>
-              <select
-                value={selectedSize}
-                onChange={(e) => setSelectedSize(e.target.value)}
-                style={{
-                  fontFamily: "monospace",
-                  padding: "0.4rem 0.75rem",
-                  fontSize: "1rem",
-                  borderRadius: "0.4rem",
-                }}
-              >
-                {Object.keys(productEntry.variants).map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <p style={{ marginBottom: "0.25rem" }}>{productInfo.name}</p>
+          <p style={{ color: "#CCDE01", margin: 0 }}>{productInfo.price}</p>
         </div>
       )}
+
 
       <div
         style={{
           position: "absolute",
-          bottom: "3rem",
+          bottom: "2rem",
           width: "100%",
           display: "flex",
           justifyContent: "center",
+          gap: "1rem",
+          alignItems: "center",
           zIndex: 20,
         }}
       >
+        {hasVariants && (
+          <select
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}
+            style={{
+              fontFamily: "monospace",
+              padding: "0.4rem 0.75rem",
+              fontSize: "1rem",
+              borderRadius: "0.4rem",
+            }}
+          >
+            {Object.keys(productEntry.variants).map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        )}
+
         <button
           onClick={handleAddToCart}
           disabled={isOffline}

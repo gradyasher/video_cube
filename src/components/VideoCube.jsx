@@ -71,7 +71,9 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
   }, []);
 
   const videoTextures = useMemo(() => {
-    return videoSources.map((src) => {
+    let loadedCount = 0;
+
+    return videoSources.map((src, idx) => {
       const video = document.createElement("video");
       video.src = src;
       video.crossOrigin = "anonymous";
@@ -80,13 +82,20 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
       video.playsInline = true;
       video.setAttribute("webkit-playsinline", "true");
       video.setAttribute("playsinline", "true");
-      video.load();
+
       video.addEventListener("canplay", () => {
         video.play().catch((e) => console.warn("Autoplay failed", e));
+        loadedCount++;
+        if (loadedCount === videoSources.length && onCubeReady) {
+          onCubeReady();
+        }
       });
+
+      video.load();
       return new THREE.VideoTexture(video);
     });
   }, []);
+
 
   const materials = useMemo(() =>
     videoTextures.map((texture) => {
@@ -98,10 +107,6 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
         toneMapped: false,
       });
     }), [videoTextures]);
-
-  useEffect(() => {
-    if (onCubeReady) onCubeReady();
-  }, []);
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -124,8 +129,8 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
       mesh.current.position.lerp(targetPosition, 1 - Math.exp(-5 * delta));
     }
 
-    mesh.current.rotation.z += 0.001;
-    mesh.current.rotation.y += 0.002;
+    mesh.current.rotation.z += 0.004;
+    mesh.current.rotation.y += 0.006;
     mesh.current.rotation.x += 0.0025;
 
     materials.forEach((material, index) => {

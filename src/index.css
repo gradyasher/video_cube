@@ -69,6 +69,20 @@ html, body, #root {
   overflow: hidden;
 }
 
+.mockup-img {
+  width: 100px;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  background: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.mockup-img:hover {
+  transform: scale(1.05);
+}
+
+
 @font-face {
   font-family: "VCR";
   src: url("/fonts/VCR_OSD_MONO.ttf") format("truetype");
