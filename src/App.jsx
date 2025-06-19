@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import mailchimp from "@mailchimp/mailchimp_marketing";
 import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CatalogPage from "./pages/CatalogPage";
@@ -19,11 +18,6 @@ import AboutPage from "./pages/AboutPage.jsx";
 import EmailPage from "./pages/EmailPage.jsx";
 
 import { AnimatePresence } from "framer-motion";
-
-mailchimp.setConfig({
-  apiKey: "YOUR_API_KEY", // 🔐 set via env var ideally
-  server: "YOUR_SERVER_PREFIX", // e.g., "us21" from api key
-});
 
 export default function App() {
   const location = useLocation();
@@ -43,7 +37,7 @@ export default function App() {
 
   useEffect(() => {
     if (location.pathname === "/checkout") {
-      setCartOpen(false); // 💀 force shut it down
+      setCartOpen(false);
     }
   }, [location.pathname]);
 

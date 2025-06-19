@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { videoSources } from "../constants/videoSources";
+import { cubeFaces, cubeThumbs } from "../constants/videoSources";
 import { damp } from "three/src/math/MathUtils.js";
+
 
 export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColor, fogColorTarget, onCubeReady }) {
   const mesh = useRef();
@@ -26,6 +27,22 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
       setEntered(true);
     }
   }, [showScene]);
+
+  useEffect(() => {
+    let loaded = 0;
+    cubeThumbs.forEach((src) => {
+      const img = new Image();
+      img.onload = () => {
+        loaded++;
+        if (loaded === cubeThumbs.length && onCubeReady) {
+          onCubeReady(); // Call early, before videos load
+        }
+      };
+      img.src = src;
+    });
+  }, []);
+
+
 
   const scheduleFlicker = () => {
     const interval = Math.random() * 500 + 250;
@@ -73,7 +90,7 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
   const videoTextures = useMemo(() => {
     let loadedCount = 0;
 
-    return videoSources.map((src, idx) => {
+    return cubeFaces.map((src, idx) => {
       const video = document.createElement("video");
       video.src = src;
       video.crossOrigin = "anonymous";
@@ -86,9 +103,6 @@ export default function VideoCube({ showScene, onFaceClick, setFogColor, fogColo
       video.addEventListener("canplay", () => {
         video.play().catch((e) => console.warn("Autoplay failed", e));
         loadedCount++;
-        if (loadedCount === videoSources.length && onCubeReady) {
-          onCubeReady();
-        }
       });
 
       video.load();

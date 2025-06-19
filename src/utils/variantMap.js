@@ -1,4 +1,4 @@
-import { BASE_URL } from "./base";
+import { BASE_URL } from "./base.js";
 
 const withBase = (path) =>
   `${BASE_URL.replace(/\/?$/, "/")}${path.replace(/^\//, "")}`;
@@ -9,9 +9,9 @@ export const variantMap = {
   [withBase("models/2troofz.glb")]: {
     image: withBase("assets/thumbnails/2troofz.png"),
     mockups: [
-      withBase("assets/mockups/2troofz/Back.jpeg"),
-      withBase("assets/mockups/2troofz/Folded.jpeg"),
-      withBase("assets/mockups/2troofz/Front.jpeg"),
+      withBase("assets/mockups/2troofz/Back.webp"),
+      withBase("assets/mockups/2troofz/Folded.webp"),
+      withBase("assets/mockups/2troofz/Front.webp"),
     ],
     variants: {
       S:  "gid://shopify/ProductVariant/43223548821643",
@@ -23,8 +23,8 @@ export const variantMap = {
   [withBase("models/allover2.glb")]: {
     image: withBase("assets/thumbnails/allover2.png"),
     mockups: [
-      withBase("assets/mockups/vortex_tee/closeup.jpeg"),
-      withBase("assets/mockups/vortex_tee/flat-front.jpeg"),
+      withBase("assets/mockups/vortex_tee/closeup.webp"),
+      withBase("assets/mockups/vortex_tee/flat-front.webp"),
     ],
     variants: {
       S:  "gid://shopify/ProductVariant/43223745527947",
@@ -36,8 +36,8 @@ export const variantMap = {
   [withBase("models/hoodie1.glb")]: {
     image: withBase("assets/thumbnails/hoodie1.png"),
     mockups: [
-      withBase("assets/mockups/vortex_hoodie/front.jpeg"),
-      withBase("assets/mockups/vortex_hoodie/person-front.jpeg"),
+      withBase("assets/mockups/vortex_hoodie/front.webp"),
+      withBase("assets/mockups/vortex_hoodie/person-front.webp"),
     ],
     variants: {
       L: "gid://shopify/ProductVariant/43223983325323",

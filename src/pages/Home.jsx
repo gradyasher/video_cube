@@ -1,15 +1,10 @@
-
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { extend } from "@react-three/fiber";
-import * as THREE from "three";
-import { UnrealBloomPass } from "three-stdlib";
-
 import VHSShaderMaterial from "../components/VHSShaderMaterial";
 import VolumetricScattering from "../components/VolumetricScattering";
 import BackgroundVideo from "../components/BackgroundVideo";
-import VideoCube from "../components/VideoCube";
 import { hostedVideoLinks } from "../constants/videoSources";
-import MainScene from "../components/MainScene";
+import MainScene from '../components/MainScene.jsx';
 import VideoOverlay from "../components/VideoOverlay";
 import SoundbathLogo from "../components/SoundbathLogo";
 import MusicPlayer from "../components/MusicPlayer";
@@ -21,7 +16,6 @@ import useVideoManager from "../hooks/useVideoManager";
 import useSceneState from "../hooks/useSceneState";
 import Title from "../components/Title";
 
-extend({ UnrealBloomPass });
 
 export default function App() {
   const {
@@ -65,18 +59,19 @@ export default function App() {
       <HandClickHint show={showMain && !hasClickedCube} />
       {showMain && <HamburgerMenu />}
       <TitleOverlay text="Dgenr8."/>
-      <MainScene
-        showScene={showMain}
-        onFaceClick={(index) => {
-          setActiveVideoIndex(index);
-          setHasClickedCube(true);
-        }}
-        setFogColor={setFogColor}
-        fogColor={fogColor}
-        fogColorTarget={fogColorTarget}
-        onCubeReady={() => setCubeReady(true)}
-        onBgReady={() => setBgReady(true)}
-      />
+        <MainScene
+          showScene={showMain}
+          onFaceClick={(index) => {
+            setActiveVideoIndex(index);
+            setHasClickedCube(true);
+          }}
+          setFogColor={setFogColor}
+          fogColor={fogColor}
+          fogColorTarget={fogColorTarget}
+          onCubeReady={() => setCubeReady(true)}
+          onBgReady={() => setBgReady(true)}
+        />
+
       <SoundbathLogo />
       <MusicPlayer />
       <VideoOverlay

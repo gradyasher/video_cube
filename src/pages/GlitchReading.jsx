@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect, Suspense, useMemo } from "react";
 import { Canvas, extend } from "@react-three/fiber";
 import { useParams } from "react-router-dom";
-import * as THREE from "three";
-import { UnrealBloomPass } from "three-stdlib";
 import { Link } from "react-router-dom";
 import TitleOverlay from "../components/TitleOverlay";
 import VHSShaderMaterial from "../components/VHSShaderMaterial";
@@ -16,7 +14,6 @@ import SoundbathLogo from "../components/SoundbathLogo";
 import useCanvasRecorderFromMainCanvas from "../hooks/useCanvasRecorderFromMainCanvas";
 import { Instagram, Share2, Download } from "lucide-react";
 
-extend({ UnrealBloomPass });
 
 export default function GlitchReading({ isReferral = false }) {
   const { id: referrerId } = useParams();

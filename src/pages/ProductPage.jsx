@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { useLocation, Link } from "react-router-dom";
 import ProductScene from "../components/ProductScene";
 import TitleOverlay from "../components/TitleOverlay";
 import { useCartContext } from "../context/CartContext";
 import { isVariantAvailable, getVariantDetails } from "../utils/shopifyUtils";
 import { variantMap } from "../utils/variantMap";
-
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -120,6 +119,7 @@ export default function ProductPage({ openCart }) {
       >
         ← back to catalog
       </Link>
+
 
       <ProductScene key={decodedModel} initialModel={decodedModel} />
 
