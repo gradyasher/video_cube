@@ -1,0 +1,67 @@
+.discord-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Helvetica', sans-serif;
+}
+
+.background-video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6) contrast(1.2);
+  z-index: 0;
+}
+
+.discord-overlay {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #00cfff;
+  text-align: center;
+  padding: 2rem;
+}
+
+.discord-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 20px #00cfff;
+}
+
+.discord-sub {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  color: white;
+  max-width: 600px;
+}
+
+.discord-cta {
+  background: rgba(0, 0, 0, 0.4);
+  color: #00cfff;
+  border: 1px solid #00cfff;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 8px;
+  text-shadow: 0 0 6px #00cfff;
+  transition: all 0.2s ease-in-out;
+  backdrop-filter: blur(4px);
+}
+
+.discord-cta:hover {
+  background: rgba(0, 0, 0, 0.6);
+  scale: 1.05;
+  cursor: pointer;
+}
+
+.footer-nav {
+  margin-top: 3rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}

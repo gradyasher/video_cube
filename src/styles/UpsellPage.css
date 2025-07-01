@@ -1,0 +1,62 @@
+.upsell-container {
+  height: 100vh;
+  background: #000;
+  color: #ccff00;
+  font-family: Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.upsell-backlink {
+  color: #0ff;
+  font-size: 1rem;
+  font-family: monospace;
+  margin-bottom: 2rem;
+  text-decoration: none;
+  text-transform: lowercase;
+}
+
+.upsell-title {
+  font-size: 2.25rem;
+  margin-bottom: 1rem;
+}
+
+.upsell-desc {
+  font-size: 1.1rem;
+  max-width: 400px;
+  margin-bottom: 2rem;
+}
+
+.glow-img {
+  width: 260px;
+  max-width: 80vw;
+  margin: 2rem auto;
+  display: block;
+  transform: rotate(-3deg);
+}
+
+.fade-start-scale {
+  opacity: 0;
+  transform: scale(0.8) rotate(-3deg);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.fade-in-scale {
+  opacity: 1;
+  transform: scale(1) rotate(-3deg);
+}
+
+.upsell-button {
+  background: #00fff7;
+  color: #000;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border-radius: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 15px #00fff7;
+}

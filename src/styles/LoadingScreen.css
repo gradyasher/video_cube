@@ -1,0 +1,51 @@
+@keyframes flickerPulse {
+  0%   { opacity: 0.2; }
+  10%  { opacity: 0.75; }
+  20%  { opacity: 0.4; }
+  35%  { opacity: 0.85; }
+  45%  { opacity: 0.3; }
+  60%  { opacity: 0.6; }
+  72%  { opacity: 0.25; }
+  85%  { opacity: 0.8; }
+  100% { opacity: 0.3; }
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeOutLoadingScreen 1.2s ease forwards;
+}
+
+/* optional fadeOut override in parent if you want to delay unmounting */
+
+.loading-flicker-circle {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+  filter: blur(8px);
+  box-shadow: 0 0 80px rgba(255, 255, 255, 0.08);
+  animation: flickerPulse 5s linear infinite;
+  z-index: 0;
+}
+
+.loading-logo-flicker {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
+  filter: blur(8px);
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.08);
+  animation: flickerPulse 6s ease-in-out infinite;
+  z-index: 1;
+}
