@@ -1,19 +1,28 @@
 import React, { useRef, useEffect, useState } from "react";
-import { useFrame, useThree, extend } from "@react-three/fiber";
-import { Plane, useFBO, shaderMaterial } from "@react-three/drei";
-import * as THREE from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { WebGLRenderTarget, LinearFilter, RGBAFormat, Vector2 } from "three";
 import { VolumetricMaterial } from "../shaders/volumetricMaterial";
-
-
-extend({ VolumetricMaterial });
 
 export default function VolumetricScattering() {
   const material = useRef();
-  const fbo = useFBO();
-  const screen = useRef();
-  const { gl, scene, camera } = useThree();
+  const mesh = useRef();
+  const fboRef = useRef();
   const initialized = useRef(false);
   const [ready, setReady] = useState(false);
+
+  const { gl, scene, camera, size } = useThree();
+
+  useEffect(() => {
+    const fbo = new WebGLRenderTarget(size.width, size.height, {
+      minFilter: LinearFilter,
+      magFilter: LinearFilter,
+      format: RGBAFormat,
+    });
+    fbo.texture.name = "volumetricFBO";
+    fboRef.current = fbo;
+
+    return () => fbo.dispose();
+  }, [size]);
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -27,25 +36,36 @@ export default function VolumetricScattering() {
       return;
     }
 
-    if (screen.current) screen.current.visible = false;
+    const fbo = fboRef.current;
+    if (!fbo) return;
+
+    if (mesh.current) mesh.current.visible = false;
 
     gl.setRenderTarget(fbo);
     gl.clear();
     gl.render(scene, camera);
     gl.setRenderTarget(null);
 
-    if (screen.current) screen.current.visible = true;
-    if (material.current) material.current.tDiffuse = fbo.texture;
+    if (mesh.current) mesh.current.visible = true;
+    if (material.current) {
+      material.current.uniforms.tDiffuse.value = fbo.texture;
+    }
   }, 1);
 
   if (!ready) return null;
 
   return (
-    <Plane args={[2, 2]} position={[0, 0, 0]} renderOrder={999} ref={screen}>
-      <volumetricMaterial
+    <mesh
+      ref={mesh}
+      position={[0, 0, 0]}
+      renderOrder={999}
+    >
+      <planeGeometry args={[2, 2]} />
+      <primitive
+        attach="material"
+        object={new VolumetricMaterial({ lightPosition: new Vector2(0.5, 0.5) })}
         ref={material}
-        lightPosition={new THREE.Vector2(0.5, 0.5)}
       />
-    </Plane>
+    </mesh>
   );
 }

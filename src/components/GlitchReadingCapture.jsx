@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import GlitchReadingContents from "../components/GlitchReadingContents";
-import { Text } from "@react-three/drei";
+import TextMesh from "../components/TextMesh"; // replaces drei Text
 import { BASE_URL } from "../utils/base";
 
 export default function GlitchReadingCapture() {
@@ -51,7 +51,6 @@ export default function GlitchReadingCapture() {
         const { url } = await res.json();
         console.log("✅ Final video available at:", url);
         // 🪄 add share UI here
-
       } catch (err) {
         console.error("❌ Upload failed:", err.message || err);
       }
@@ -100,19 +99,14 @@ export default function GlitchReadingCapture() {
                 setTimeout(() => setCapturing(true), 1000);
               }}
             />
-            <Text
+            <TextMesh
               position={[0, 1.8, 2]}
-              fontSize={1.1}
+              fontSize={64}
+              width={4}
+              height={1.5}
               color="#ccff66"
-              anchorX="center"
-              anchorY="middle"
-              textAlign="center"
-              letterSpacing={-0.13}
-              font={`${base}fonts/ArialMT.woff`}
-              material-toneMapped={false}
-            >
-              the sphere has{"\n"}chosen.
-            </Text>
+              text={`the sphere has\nchosen.`}
+            />
           </Suspense>
         </Canvas>
       </div>

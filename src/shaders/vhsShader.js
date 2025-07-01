@@ -1,9 +1,9 @@
-import * as THREE from "three";
+import { Vector2 } from "three";
 
 export const vhsShader = {
   uniforms: {
     iTime: { value: 0.0 },
-    iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    iResolution: { value: new Vector2(window.innerWidth, window.innerHeight) },
     iChannel0: { value: null },
   },
   vertexShader: `
@@ -88,8 +88,8 @@ export const vhsShader = {
       vec3 color = vec3(red,green,blue);
       float scanline = sin(uv.y*800.0)*0.04*scalinesOpt;
       color -= scanline;
-      vec3 greyTint = vec3(0.5); // or try vec3(0.6), vec3(0.4) for variation
-      color = mix(color, greyTint, 0.4); // 0.0 = original color, 1.0 = fully gray
+      vec3 greyTint = vec3(0.5);
+      color = mix(color, greyTint, 0.4);
       gl_FragColor = vec4(color, 0.2);
     }
   `

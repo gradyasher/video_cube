@@ -2,8 +2,8 @@ import React, { Suspense, lazy } from "react";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
 
-import BackgroundVideo from "./BackgroundVideo";
-import VideoCube from "./VideoCube";
+const BackgroundVideo = lazy(() => import("./BackgroundVideo"));
+const VideoCube = lazy(() => import("./VideoCube"));
 const VHSShaderMaterial = lazy(() => import("./VHSShaderMaterial"));
 const VolumetricScattering = lazy(() => import("./VolumetricScattering"));
 
@@ -14,8 +14,8 @@ export default function MainScene({ showScene, onFaceClick, onCubeReady, onBgRea
       <ambientLight intensity={1} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
       <directionalLight position={[0, 0, 2]} intensity={1.2} color={"white"} />
-      <BackgroundVideo onReady={onBgReady} />
-      <Suspense fallback={null}>
+      <Suspense>
+        <BackgroundVideo onReady={onBgReady} />
         <VideoCube
           showScene={showScene}
           onCubeReady={onCubeReady}

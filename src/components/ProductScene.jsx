@@ -1,30 +1,41 @@
 import React, { useRef, useState, Suspense, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
-import { useGLTF } from "@react-three/drei";
+import { Vector3, MathUtils } from "three";
+import { DirectionalLight, AmbientLight } from "three";
+import { useNavigate } from "react-router-dom";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import BackgroundVideo from "./BackgroundVideo";
 import VHSShaderMaterial from "./VHSShaderMaterial";
-import * as THREE from "three";
-import { useNavigate } from "react-router-dom";
-import { variantMap } from "../utils/variantMap"; // ← import the map
+import { variantMap } from "../utils/variantMap";
 import { BASE_URL } from "../utils/base";
 
-// Define base URL for assets
 const base = BASE_URL;
-
-useGLTF.preload(`${base}models/2troofz.glb`);
-useGLTF.preload(`${base}models/allover2.glb`);
-useGLTF.preload(`${base}models/hoodie1.glb`);
-
 const models = Object.keys(variantMap);
-// Preload them
-models.forEach((modelPath) => useGLTF.preload(modelPath));
+
+// Manual GLTF loader
+function useGLTFManual(url) {
+  const [gltf, setGltf] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loader = new GLTFLoader();
+    loader.load(url, (data) => {
+      if (isMounted) setGltf(data);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [url]);
+
+  return gltf;
+}
 
 function FloatingShirt({ modelPath }) {
-  const glb = useGLTF(modelPath);
+  const glb = useGLTFManual(modelPath);
   const ref = useRef();
-
-  const targetPos = useRef(new THREE.Vector3(0, -1.2, 0));
+  const targetPos = useRef(new Vector3(0, -1.2, 0));
 
   useEffect(() => {
     if (ref.current) {
@@ -37,39 +48,36 @@ function FloatingShirt({ modelPath }) {
   useFrame(() => {
     if (ref.current) {
       const distance = Math.abs(ref.current.position.x);
-      const spinSpeed = THREE.MathUtils.lerp(0.03, 0.01, 1 - (Math.min(distance / 5, 1) * 15));
-
+      const spinSpeed = MathUtils.lerp(0.03, 0.01, 1 - Math.min(distance / 5, 1) * 15);
       ref.current.rotation.y += spinSpeed;
       ref.current.position.lerp(targetPos.current, 0.1);
     }
   });
 
+  if (!glb) return null;
+
   return (
     <primitive
       ref={ref}
       object={glb.scene}
-      scale={1.25}
+      scale={0.8}
     />
   );
 }
 
 function ProductScene({ initialModel }) {
   const initialIndex = models.findIndex((m) => m === initialModel);
-  const [currentModelIndex, setCurrentModelIndex] = useState(
-    initialIndex >= 0 ? initialIndex : 0
-  );
+  const [currentModelIndex, setCurrentModelIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const navigate = useNavigate();
 
   const handleNext = () => {
     const nextIndex = (currentModelIndex + 1) % models.length;
-    const nextModel = models[nextIndex];
-    navigate(`/shop/view?model=${encodeURIComponent(nextModel)}`);
+    navigate(`/shop/view?model=${encodeURIComponent(models[nextIndex])}`);
   };
 
   const handlePrev = () => {
     const prevIndex = (currentModelIndex - 1 + models.length) % models.length;
-    const prevModel = models[prevIndex];
-    navigate(`/shop/view?model=${encodeURIComponent(prevModel)}`);
+    navigate(`/shop/view?model=${encodeURIComponent(models[prevIndex])}`);
   };
 
   return (
@@ -114,11 +122,7 @@ function ProductScene({ initialModel }) {
         }}
         onClick={handlePrev}
       >
-        <img
-          src={`${base}assets/left_arrow.png`}
-          alt="Previous shirt"
-          style={{ width: "40px", height: "40px" }}
-        />
+        <img src={`${base}assets/left_arrow.png`} alt="Previous shirt" style={{ width: "40px", height: "40px" }} />
       </div>
       <div
         style={{
@@ -131,15 +135,10 @@ function ProductScene({ initialModel }) {
         }}
         onClick={handleNext}
       >
-        <img
-          src={`${base}assets/right_arrow.png`}
-          alt="Next shirt"
-          style={{ width: "40px", height: "40px" }}
-        />
+        <img src={`${base}assets/right_arrow.png`} alt="Next shirt" style={{ width: "40px", height: "40px" }} />
       </div>
     </div>
   );
 }
 
-const MemoizedProductScene = React.memo(ProductScene);
-export default MemoizedProductScene;
+export default React.memo(ProductScene);

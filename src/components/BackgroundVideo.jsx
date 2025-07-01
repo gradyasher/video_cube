@@ -1,19 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Plane } from "@react-three/drei";
-import * as THREE from "three";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { VideoTexture, LinearFilter, RGBFormat } from "three";
 import { backgroundShader } from "../shaders/backgroundShader";
 import { bgVids } from "../constants/videoSources";
 
-
-
 export default function BackgroundVideo({ onReady, videoUrl, scale = 1 }) {
+  const meshRef = useRef();
+  const materialRef = useRef();
+  const videoRef = useRef(null);
+  const [videoTexture, setVideoTexture] = useState(null);
+
   const selectedSrc = useMemo(() => {
     if (videoUrl) return videoUrl;
     const randomIndex = Math.floor(Math.random() * bgVids.length);
     return bgVids[randomIndex];
-  }, []);
-
-  const [texture, setTexture] = useState(null);
+  }, [videoUrl]);
 
   useEffect(() => {
     const video = document.createElement("video");
@@ -25,37 +26,46 @@ export default function BackgroundVideo({ onReady, videoUrl, scale = 1 }) {
     video.setAttribute("webkit-playsinline", "true");
     video.setAttribute("playsinline", "true");
 
-    video.addEventListener("canplay", () => {
-      video.play().catch((e) => console.warn("Autoplay failed", e));
-      const tex = new THREE.VideoTexture(video);
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      tex.format = THREE.RGBFormat;
-      tex.needsUpdate = true;
-      setTexture(tex);
+    videoRef.current = video;
 
-      if (onReady) onReady();
+    video.addEventListener("canplay", () => {
+      const tex = new VideoTexture(video);
+      tex.minFilter = LinearFilter;
+      tex.magFilter = LinearFilter;
+      tex.format = RGBFormat;
+      tex.needsUpdate = true;
+      setVideoTexture(tex);
+      onReady?.();
+      video.play().catch((e) => console.warn("Autoplay failed", e));
     });
 
     video.load();
-  }, [selectedSrc]);
+  }, [selectedSrc, onReady]);
 
-  if (!texture) return null;
+  useFrame(() => {
+    if (videoTexture && videoRef.current?.readyState >= 2) {
+      videoTexture.needsUpdate = true;
+    }
+  });
+
+  if (!videoTexture) return null;
 
   const width = 100 * scale;
   const height = 30 * scale;
 
   return (
-    <Plane args={[width, height]} position={[0, 0, -5]} renderOrder={-1}>
+    <mesh ref={meshRef} position={[0, 0, -5]} renderOrder={-1}>
+      <planeGeometry args={[width, height]} />
       <shaderMaterial
+        ref={materialRef}
         vertexShader={backgroundShader.vertexShader}
         fragmentShader={backgroundShader.fragmentShader}
         uniforms={{
-          map: { value: texture },
+          map: { value: videoTexture },
           warpAmount: { value: 1.5 },
         }}
         transparent={false}
       />
-    </Plane>
+    </mesh>
   );
 }

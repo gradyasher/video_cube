@@ -1,13 +1,22 @@
 import React, { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Plane } from "@react-three/drei";
+import { UniformsUtils } from "three";
 import { vhsShader } from "../shaders/vhsShader";
-
 
 export default function VHSShaderMaterial() {
   const shaderRef = useRef();
 
-  const shader = useMemo(() => vhsShader, []);
+  const shader = useMemo(() => ({
+    uniforms: {
+      ...UniformsUtils.clone(vhsShader.uniforms),
+      iTime: { value: 0 },
+    },
+    vertexShader: vhsShader.vertexShader,
+    fragmentShader: vhsShader.fragmentShader,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  }), []);
 
   useFrame(({ clock }) => {
     if (shaderRef.current) {
@@ -16,15 +25,9 @@ export default function VHSShaderMaterial() {
   });
 
   return (
-    <Plane args={[20, 10]} position={[0, 0, 0.01]} renderOrder={Infinity} pointerEvents={false}>
-      <shaderMaterial
-        ref={shaderRef}
-        attach="material"
-        args={[shader]}
-        transparent
-        depthTest={false}
-        depthWrite={false}
-      />
-    </Plane>
+    <mesh position={[0, 0, 0.01]} renderOrder={Infinity}>
+      <planeGeometry args={[20, 10]} />
+      <shaderMaterial ref={shaderRef} args={[shader]} />
+    </mesh>
   );
 }

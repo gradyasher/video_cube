@@ -1,33 +1,50 @@
-import React, { Suspense, useMemo, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { EffectComposer, Vignette, Bloom } from "@react-three/postprocessing";
-import * as THREE from "three";
-import { useVideoTexture } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import {
+  RepeatWrapping,
+  Vector3,
+  BackSide,
+} from "three";
+import { useFrame, extend } from "@react-three/fiber";
 import VibrantVideoMaterial from "../shaders/VibrantVideoMaterial";
 import VolumetricScattering from "./VolumetricScattering";
 import VHSShaderMaterial from "./VHSShaderMaterial";
 import BackgroundVideo from "./BackgroundVideo";
-import { damp } from "three/src/math/MathUtils.js";
+import { useCustomVideoTexture } from "../hooks/useCustomVideoTexture"; // ← custom replacement
 
-export default function GlitchReadingContents({ sphereVideoUrl, bgVideoUrl, onSphereReady, onBgReady, recording, showScene }) {
+extend({ VibrantVideoMaterial });
+
+export default function GlitchReadingContents({
+  sphereVideoUrl,
+  bgVideoUrl,
+  onSphereReady,
+  onBgReady,
+  recording,
+  showScene,
+}) {
   const scale = recording ? 0.78 : 1;
   const meshRef = useRef();
   const [entered, setEntered] = useState(false);
 
-  const texture = useVideoTexture(sphereVideoUrl, { start: true, muted: true });
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(-1, 1);
-  texture.offset.set(1, 0);
+  const texture = useCustomVideoTexture(sphereVideoUrl, {
+    start: true,
+    muted: true,
+  });
 
-  // Always fire when the texture is ready
+  useEffect(() => {
+    if (!texture) return;
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = RepeatWrapping;
+    texture.repeat.set(-1, 1);
+    texture.offset.set(1, 0);
+  }, [texture]);
+
   useEffect(() => {
     if (texture?.image?.videoWidth > 0) {
       onSphereReady?.();
     }
   }, [texture]);
 
-  // Fire when showScene becomes true AND texture is already ready
   useEffect(() => {
     if (showScene && meshRef.current && texture?.image?.videoWidth > 0) {
       meshRef.current.position.set(0, -2, 5);
@@ -35,10 +52,9 @@ export default function GlitchReadingContents({ sphereVideoUrl, bgVideoUrl, onSp
     }
   }, [showScene]);
 
-
   useFrame((_, delta) => {
     if (entered && meshRef.current) {
-      meshRef.current.position.lerp(new THREE.Vector3(0, 0, -0.5), 1 - Math.exp(-5 * delta));
+      meshRef.current.position.lerp(new Vector3(0, 0, -0.5), 1 - Math.exp(-5 * delta));
     }
   });
 
@@ -54,9 +70,9 @@ export default function GlitchReadingContents({ sphereVideoUrl, bgVideoUrl, onSp
         <vibrantVideoMaterial
           uTexture={texture}
           uSaturation={1.5}
-          uBrightness={.4}
+          uBrightness={0.4}
           uOffsetX={0.25}
-          side={THREE.BackSide}
+          side={BackSide}
           toneMapped={false}
         />
       </mesh>

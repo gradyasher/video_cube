@@ -1,126 +1,96 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import {
+  Raycaster,
+  Vector2,
+  Vector3,
+  TextureLoader,
+  VideoTexture,
+  Color,
+  MeshStandardMaterial,
+  MathUtils,
+} from "three";
 import { cubeFaces, cubeThumbs } from "../constants/videoSources";
-import { damp } from "three/src/math/MathUtils.js";
-
 
 export default function VideoCube({ showScene, onFaceClick, onCubeReady }) {
   const mesh = useRef();
   const { gl, camera, size } = useThree();
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
-  const mouse = useMemo(() => new THREE.Vector2(), []);
+  const raycaster = useMemo(() => new Raycaster(), []);
+  const mouse = useMemo(() => new Vector2(), []);
   const isMobile = size.width < 768;
 
   const [flickerIndex, setFlickerIndex] = useState(null);
   const [flickerValue, setFlickerValue] = useState(0);
-  const [flickerColor, setFlickerColor] = useState(new THREE.Color());
+  const [flickerColor, setFlickerColor] = useState(new Color());
   const [entered, setEntered] = useState(false);
+  const [textures, setTextures] = useState([]);
+
   const flickerTimeout = useRef(null);
   const nextTriggerTimeout = useRef(null);
   const animationFrame = useRef(null);
-  const targetPosition = new THREE.Vector3(0, 0, 0);
+  const targetPosition = new Vector3(0, 0, 0);
 
   useEffect(() => {
     if (showScene && mesh.current) {
-      mesh.current.position.set(0, -2, 5); // entrance start
+      mesh.current.position.set(0, -2, 5);
       setEntered(true);
     }
   }, [showScene]);
 
   useEffect(() => {
     let loaded = 0;
-    cubeThumbs.forEach((src) => {
-      const img = new Image();
-      img.onload = () => {
+    const thumbTextures = new Array(cubeThumbs.length);
+
+    cubeThumbs.forEach((thumb, idx) => {
+      new TextureLoader().load(thumb, (loadedTexture) => {
+        thumbTextures[idx] = { texture: loadedTexture, isVideo: false };
         loaded++;
-        if (loaded === cubeThumbs.length && onCubeReady) {
-          onCubeReady(); // Call early, before videos load
+
+        if (loaded === cubeThumbs.length) {
+          setTextures(thumbTextures);
+          onCubeReady?.();
+
+          cubeFaces.forEach((src, vIdx) => {
+            const video = document.createElement("video");
+            video.src = src;
+            video.crossOrigin = "anonymous";
+            video.loop = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.setAttribute("webkit-playsinline", "true");
+            video.setAttribute("playsinline", "true");
+
+            video.addEventListener("canplay", () => {
+              const videoTexture = new VideoTexture(video);
+              video.play().catch((e) => console.warn("Autoplay failed", e));
+              setTextures((prev) => {
+                const next = [...prev];
+                next[vIdx] = { texture: videoTexture, isVideo: true };
+                return next;
+              });
+            });
+
+            video.load();
+          });
         }
-      };
-      img.src = src;
+      });
     });
   }, []);
 
-
-
-  const scheduleFlicker = () => {
-    const interval = Math.random() * 500 + 250;
-    nextTriggerTimeout.current = setTimeout(() => {
-      const randomFace = Math.floor(Math.random() * 6);
-      const pastelHue = Math.random();
-      const pastelColor = new THREE.Color().setHSL(pastelHue, 0.9, 0.95);
-      setFlickerIndex(randomFace);
-      setFlickerColor(pastelColor);
-      setFlickerValue(0);
-
-      let progress = 0;
-      const duration = 1000;
-      const start = performance.now();
-
-      const animate = (now) => {
-        progress = now - start;
-        const t = Math.min(progress / duration, 1);
-        const eased = t * t * (3 - 2 * t);
-        const clamped = Math.max(0, Math.min(3 * eased, 3));
-        setFlickerValue(clamped);
-
-        if (t < 1) {
-          animationFrame.current = requestAnimationFrame(animate);
-        } else {
-          setFlickerValue(0);
-          setFlickerIndex(null);
-          scheduleFlicker();
-        }
-      };
-
-      animationFrame.current = requestAnimationFrame(animate);
-    }, interval);
-  };
-
-  useEffect(() => {
-    scheduleFlicker();
-    return () => {
-      clearTimeout(flickerTimeout.current);
-      clearTimeout(nextTriggerTimeout.current);
-      cancelAnimationFrame(animationFrame.current);
-    };
-  }, []);
-
-  const videoTextures = useMemo(() => {
-    let loadedCount = 0;
-
-    return cubeFaces.map((src, idx) => {
-      const video = document.createElement("video");
-      video.src = src;
-      video.crossOrigin = "anonymous";
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.setAttribute("webkit-playsinline", "true");
-      video.setAttribute("playsinline", "true");
-
-      video.addEventListener("canplay", () => {
-        video.play().catch((e) => console.warn("Autoplay failed", e));
-        loadedCount++;
-      });
-
-      video.load();
-      return new THREE.VideoTexture(video);
-    });
-  }, []);
-
-
-  const materials = useMemo(() =>
-    videoTextures.map((texture) => {
-      return new THREE.MeshStandardMaterial({
-        map: texture,
-        emissive: new THREE.Color(0x000000),
-        emissiveIntensity: 0,
-        emissiveMap: null,
-        toneMapped: false,
-      });
-    }), [videoTextures]);
+  const materials = useMemo(
+    () =>
+      textures.map(
+        (entry) =>
+          new MeshStandardMaterial({
+            map: entry.texture,
+            emissive: new Color(0x000000),
+            emissiveIntensity: 0,
+            emissiveMap: null,
+            toneMapped: false,
+          })
+      ),
+    [textures]
+  );
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -138,6 +108,49 @@ export default function VideoCube({ showScene, onFaceClick, onCubeReady }) {
     return () => window.removeEventListener("pointerdown", handleClick);
   }, [gl, camera, raycaster, mouse, onFaceClick]);
 
+  useEffect(() => {
+    const scheduleFlicker = () => {
+      const interval = Math.random() * 500 + 250;
+      nextTriggerTimeout.current = setTimeout(() => {
+        const randomFace = Math.floor(Math.random() * 6);
+        const pastelHue = Math.random();
+        const pastelColor = new Color().setHSL(pastelHue, 0.9, 0.95);
+        setFlickerIndex(randomFace);
+        setFlickerColor(pastelColor);
+        setFlickerValue(0);
+
+        let progress = 0;
+        const duration = 1000;
+        const start = performance.now();
+
+        const animate = (now) => {
+          progress = now - start;
+          const t = Math.min(progress / duration, 1);
+          const eased = t * t * (3 - 2 * t);
+          const clamped = Math.max(0, Math.min(3 * eased, 3));
+          setFlickerValue(clamped);
+
+          if (t < 1) {
+            animationFrame.current = requestAnimationFrame(animate);
+          } else {
+            setFlickerValue(0);
+            setFlickerIndex(null);
+            scheduleFlicker();
+          }
+        };
+
+        animationFrame.current = requestAnimationFrame(animate);
+      }, interval);
+    };
+
+    scheduleFlicker();
+    return () => {
+      clearTimeout(flickerTimeout.current);
+      clearTimeout(nextTriggerTimeout.current);
+      cancelAnimationFrame(animationFrame.current);
+    };
+  }, []);
+
   useFrame((_, delta) => {
     if (entered && mesh.current) {
       mesh.current.position.lerp(targetPosition, 1 - Math.exp(-5 * delta));
@@ -151,11 +164,7 @@ export default function VideoCube({ showScene, onFaceClick, onCubeReady }) {
       if (!material) return;
       const target = index === flickerIndex ? flickerValue : 0;
       if (index === flickerIndex) material.emissive.copy(flickerColor);
-      material.emissiveIntensity = THREE.MathUtils.lerp(
-        material.emissiveIntensity,
-        target,
-        0.08
-      );
+      material.emissiveIntensity = MathUtils.lerp(material.emissiveIntensity, target, 0.08);
     });
   });
 
@@ -163,11 +172,7 @@ export default function VideoCube({ showScene, onFaceClick, onCubeReady }) {
     <mesh ref={mesh} scale={isMobile ? [1.8, 1.8, 1.8] : [2.5, 2.5, 2.5]}>
       <boxGeometry args={[1, 1, 1]} />
       {materials.map((material, index) => (
-        <primitive
-          key={index}
-          attach={`material-${index}`}
-          object={material}
-        />
+        <primitive key={index} attach={`material-${index}`} object={material} />
       ))}
     </mesh>
   );

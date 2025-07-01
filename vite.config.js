@@ -5,8 +5,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   base: './',
-  plugins: [react(), glsl(), visualizer({ open: true })],
-
+  plugins: [react(), glsl(),
+              visualizer({
+              filename: './dist/report.html',
+              open: true, // Automatically opens the report in your browser
+              gzipSize: true,
+              brotliSize: true,
+          }),],
   server: {
     proxy: {
       '/api': 'http://localhost:3001',
