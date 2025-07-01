@@ -1,4 +1,5 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import * as React from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./Layout";
 
@@ -6,9 +7,6 @@ import Layout from "./Layout";
 // Lazy-loaded route components
 const Home = lazy(() => import("./pages/Home"));
 const ShopRoutes = lazy(() => import("./ShopRoutes"));
-const GlitchReading = lazy(() => import("./pages/GlitchReading"));
-const GlitchReadingShare = lazy(() => import("./pages/GlitchReadingShare"));
-const GlitchReadingCapture = lazy(() => import("./components/GlitchReadingCapture"));
 const AdventurePage = lazy(() => import("./pages/AdventurePage"));
 const StreamPage = lazy(() => import("./pages/StreamPage"));
 const DiscordPage = lazy(() => import("./pages/DiscordPage"));
@@ -19,21 +17,21 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const isShopPage = location.pathname === "/shop" || location.pathname.startsWith("/shop/view");
-  const [cartOpen, setCartOpen] = useState(false);
-  const [videosWatched, setVideosWatched] = useState(() => {
+  const [cartOpen, setCartOpen] = React.useState(false);
+  const [videosWatched, setVideosWatched] = React.useState(() => {
     return parseInt(localStorage.getItem("videosWatched") || "0", 10);
   });
-  const [hasSeenMystery, setHasSeenMystery] = useState(() => {
+  const [hasSeenMystery, setHasSeenMystery] = React.useState(() => {
     return localStorage.getItem("hasSeenMystery") === "true";
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (location.pathname === "/checkout") {
       setCartOpen(false);
     }
   }, [location.pathname]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const listener = async (event) => {
       if (event.data === "video-closed") {
         setVideosWatched((prev) => {
@@ -69,7 +67,7 @@ export default function App() {
     return () => window.removeEventListener("message", listener);
   }, [hasSeenMystery]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handler = (e) => {
       const isMac = navigator.platform.toUpperCase().includes('MAC');
       const isResetCombo =
@@ -109,10 +107,6 @@ export default function App() {
        <Routes>
          <Route element={<Layout />}>
            <Route path="/" element={<Home />} />
-
-           <Route path="/glitch-reading" element={<GlitchReading />} />
-           <Route path="/capture" element={<GlitchReadingCapture />} />
-           <Route path="/glitch-reading/share/:id" element={<GlitchReadingShare />} />
            <Route path="/stream" element={<StreamPage />} />
            <Route path="/discord" element={<DiscordPage />} />
            <Route path="/about" element={<AboutPage />} />
