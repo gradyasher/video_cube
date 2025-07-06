@@ -2,10 +2,10 @@
 import { sendRewardEmail } from "../src/utils/sendRewardEmail.js"
 import { rewardMessages } from "../src/constants/rewardMap.js"
 
+
 const rewardCache = new Map();
 
-
-export default async function handler(req, res) {
+export default async function subscribeHandler(req, res) {
   // must be a post method
   if (req.method !== "POST") {
     return res.status(405).json({ error: "method not allowed" });
@@ -85,6 +85,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ message: "Test email sent (dev mode)", reward });
   }
 
+
   const API_KEY = process.env.MAILCHIMP_API_KEY;
   const AUDIENCE_ID = "e119572dab";
   const DATACENTER = API_KEY.split("-")[1];
@@ -149,11 +150,13 @@ export default async function handler(req, res) {
         console.log(`📤 Sending reward email for: ${reward}`);
 
         // 🔁 Swap this for actual email provider logic (Resend, Postmark, etc.)
+        const rewardSlug = reward.toLowerCase().replace(/\s+/g, '-');
         await sendRewardEmail({
           to: email,
           subject: rewardInfo.subject,
           text: rewardInfo.text,
           html: rewardInfo.html,
+          rewardSlug
         });
       }
       return res.status(200).json({ message: "Subscribed successfully!" });

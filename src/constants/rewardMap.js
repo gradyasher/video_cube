@@ -1,5 +1,5 @@
 export const rewardMap = {
-
+  /*
   "free sticker with purchase!": {
     redirect: "/shop",
     message: "redirecting you to the shop...",
@@ -15,7 +15,7 @@ export const rewardMap = {
     redirect: "/glitch-reading",
     message: "redirecting you to your glitch reading...",
     isEmailReward: false,
-  },
+  },*/
   "unreleased track": {
     message: "check your inbox for your exclusive track 💌",
     isEmailReward: true,

@@ -53,7 +53,7 @@ export default function HamburgerMenu() {
 
       {mountMenu && (
         <div className={`menu-container ${isOpen ? "menu-fade-in" : "menu-fade-out"}`}>
-          {[...menuItems, { label: "vhshoroscope", link: "vhs" }].map(({ label, link }, i) => {
+          {[...menuItems, { label: "goodies", link: "vhs" }].map(({ label, link }, i) => {
             const isVhs = link === "vhs";
             const handleClick = isVhs
               ? handleVhsHoroscopeClick

@@ -8,21 +8,21 @@ import cookieParser from "cookie-parser";
 import { spawn } from "child_process";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { generateQRCode } from "./src/utils/generateQRCode.js"; // adjust path as needed
-import subscribeHandler from "./api/subscribe.js"; // or require(...) if using CJS
+import { generateQRCode } from "./src/utils/generateQRCode.js";
+import subscribeHandler from "./api/subscribe.js";
 import { triggerMailchimpJourney } from "./api/mailchimp.js";
-import generateDiscount from "./api/generate-discount.js"; // ✅ adjust if needed
-import { generateNewCartId } from "./src/utils/shopifyUtils.server.js"; // adjust path if needed
+import generateDiscount from "./api/generate-discount.js";
+import { generateNewCartId } from "./src/utils/shopifyUtils.server.js";
 import { hasStickerInCart } from "./src/utils/cartUtils.js";
 import { FREE_STICKER_VARIANT_ID } from "./src/utils/variantMap.js"
-import signalHandler from "./api/signal.js";
+import mailchimp from "@mailchimp/mailchimp_marketing";
 
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 const PORT = 3001;
 const MAX_AGE_MINUTES = 10;
-const ipClaims = new Map(); // IP => timestamp[]
+const ipClaims = new Map();
 const MAX_CLAIMS_PER_HOUR = 3;
 
 dotenv.config();
@@ -42,6 +42,7 @@ function isRateLimited(ip) {
 }
 
 // auto-purge generated folder every 5 minutes
+/*
 setInterval(() => {
   const dir = path.resolve("public/generated");
   const now = Date.now();
@@ -71,19 +72,155 @@ setInterval(() => {
       console.log("🧹 Deleted temp upload:", file);
     }
   });
-}, 15 * 60 * 1000);
+}, 15 * 60 * 1000);*/
 
-app.post("/api/subscribe", (req, res) => {
-  subscribeHandler(req, res);
-  console.log("✅ /api/subscribe endpoint wired up");
-});
+app.post("/api/subscribe", subscribeHandler);
+
 
 app.get("/api/ping", (req, res) => {
   res.send("pong");
 });
 
-app.post("/api/signal", (req, res) => signalHandler(req, res));
+app.post("/api/check-claimed", (req, res) => {
+  const { email } = req.body;
 
+  // TEMPORARY fallback logic:
+  // You can later tie this to a real database or referral log.
+  const alreadyClaimed = false; // or `true` if you want to simulate that
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  console.log(`📬 Checking claim status for: ${email}`);
+  return res.json({ alreadyClaimed });
+});
+
+
+// server.js
+app.post("/api/add-free-sticker", async (req, res) => {
+  const { cartId } = req.body;
+  console.log()
+  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
+
+  try {
+    const query = `
+      query {
+        cart(id: "${cartId}") {
+          lines(first: 20) {
+            edges {
+              node {
+                merchandise {
+                  ... on ProductVariant {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const cartRes = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    // check if shopify has sticker in their cart
+    const { data } = await cartRes.json();
+    const lines = data?.cart?.lines?.edges?.map((edge) => edge.node) || [];
+
+    if (hasStickerInCart({ lines }, FREE_STICKER_VARIANT_ID)) {
+      return res.status(409).json({ message: "Sticker already in cart" });
+    }
+
+    // ➕ Add it
+    const mutation = `
+      mutation {
+        cartLinesAdd(cartId: "${cartId}", lines: [{ merchandiseId: "${FREE_STICKER_VARIANT_ID}", quantity: 1 }]) {
+          cart { id }
+        }
+      }
+    `;
+
+    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation }),
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Failed to add free sticker", err);
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+
+app.post("/api/delete-cart", async (req, res) => {
+  const { cartId } = req.body;
+  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
+
+  try {
+    const query = `
+      query {
+        cart(id: "${cartId}") {
+          lines(first: 50) {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+    `;
+    const res1 = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query }),
+    });
+    const json1 = await res1.json();
+    const lineIds = json1.data.cart.lines.edges.map((e) => e.node.id);
+
+    // Step 2: remove those lines from the cart
+    const mutation = `
+      mutation {
+        cartLinesRemove(cartId: "${cartId}", lineIds: ${JSON.stringify(lineIds)}) {
+          cart {
+            id
+          }
+        }
+      }
+    `;
+    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({ query: mutation }),
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Shopify cart cleanup failed:", err);
+    return res.status(500).json({ error: "Failed to clear cart on Shopify" });
+  }
+});
+
+/*
 app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
   console.log("📩 Received POST /api/process-glitch-video");
 
@@ -143,23 +280,6 @@ app.post("/api/process-glitch-video", upload.single("file"), (req, res) => {
     return res.status(500).json({ error: "Unexpected server error", details: err.message });
   }
 });
-
-
-app.post("/api/check-claimed", (req, res) => {
-  const { email } = req.body;
-
-  // TEMPORARY fallback logic:
-  // You can later tie this to a real database or referral log.
-  const alreadyClaimed = false; // or `true` if you want to simulate that
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required." });
-  }
-
-  console.log(`📬 Checking claim status for: ${email}`);
-  return res.json({ alreadyClaimed });
-});
-
 
 
 app.post("/api/delete-glitch-video", (req, res) => {
@@ -320,6 +440,8 @@ app.post("/api/stitch-frames", async (req, res) => {
   });
 
 });
+
+
 
 app.post("/api/log-referral", (req, res) => {
   const { referrerId, action } = req.body;
@@ -505,130 +627,8 @@ app.post("/api/mailchimp/referral-opened", async (req, res) => {
     res.status(500).json({ error: "Internal error", details: err.message });
   }
 });
+*/
 
-
-// server.js
-app.post("/api/add-free-sticker", async (req, res) => {
-  const { cartId } = req.body;
-  console.log()
-  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
-
-  try {
-    const query = `
-      query {
-        cart(id: "${cartId}") {
-          lines(first: 20) {
-            edges {
-              node {
-                merchandise {
-                  ... on ProductVariant {
-                    id
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const cartRes = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({ query }),
-    });
-
-    // check if shopify has sticker in their cart
-    const { data } = await cartRes.json();
-    const lines = data?.cart?.lines?.edges?.map((edge) => edge.node) || [];
-
-    if (hasStickerInCart({ lines }, FREE_STICKER_VARIANT_ID)) {
-      return res.status(409).json({ message: "Sticker already in cart" });
-    }
-
-    // ➕ Add it
-    const mutation = `
-      mutation {
-        cartLinesAdd(cartId: "${cartId}", lines: [{ merchandiseId: "${FREE_STICKER_VARIANT_ID}", quantity: 1 }]) {
-          cart { id }
-        }
-      }
-    `;
-
-    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({ query: mutation }),
-    });
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("❌ Failed to add free sticker", err);
-    return res.status(500).json({ error: "Internal error" });
-  }
-});
-
-
-app.post("/api/delete-cart", async (req, res) => {
-  const { cartId } = req.body;
-  if (!cartId) return res.status(400).json({ error: "Missing cartId" });
-
-  try {
-    const query = `
-      query {
-        cart(id: "${cartId}") {
-          lines(first: 50) {
-            edges {
-              node {
-                id
-              }
-            }
-          }
-        }
-      }
-    `;
-    const res1 = await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({ query }),
-    });
-    const json1 = await res1.json();
-    const lineIds = json1.data.cart.lines.edges.map((e) => e.node.id);
-
-    // Step 2: remove those lines from the cart
-    const mutation = `
-      mutation {
-        cartLinesRemove(cartId: "${cartId}", lineIds: ${JSON.stringify(lineIds)}) {
-          cart {
-            id
-          }
-        }
-      }
-    `;
-    await fetch(`https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/api/2023-04/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Storefront-Access-Token": process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({ query: mutation }),
-    });
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("❌ Shopify cart cleanup failed:", err);
-    return res.status(500).json({ error: "Failed to clear cart on Shopify" });
-  }
-});
 
 
 app.listen(PORT, () => {

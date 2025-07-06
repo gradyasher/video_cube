@@ -1,48 +1,66 @@
 // utils/sendRewardEmail.js
-import nodemailer from "nodemailer";
-
 export async function sendRewardEmail({ to, subject, text, html, rewardSlug = "general" }) {
-  /*
-  const testAccount = await nodemailer.createTestAccount();
-
-  const transporter = nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
-
-  const info = await transporter.sendMail({
-    from: '"dgenr8. & soundbath." <rewards@dgenr8.world>',
-    to,
-    subject,
-    text,
-    html, // ✅ now html is actually defined and passed
-  });
-
-  console.log(`📨 Ethereal test email sent: ${nodemailer.getTestMessageUrl(info)}`);
-  */
   const API_KEY = process.env.MAILCHIMP_TRANSACTIONAL_API_KEY_2;
+
 
   const payload = {
     key: API_KEY,
+    template_name: "unreleased-track-reward-2",
+    template_content: [
+      {
+        name: "main_content",
+        content: "<p style='color: red;'>🔥 THIS IS A TEST 🔥</p>",
+      }
+    ],
     message: {
+      to: [{ email: to, type: "to" }],
       from_email: "graz@dgenr8.world",
       from_name: "dgenr8. & soundbath.",
-      to: [{ email: to, type: "to" }],
       subject,
-      text,
-      html,
+      merge_vars: [
+        {
+          rcpt: to,
+          vars: [
+            { name: "email", content: to },
+            { name: "reward_slug", content: rewardSlug },
+          ],
+        },
+      ],
+      global_merge_vars: [
+        { "name": "email", "content": to },
+        { "name": "reward_slug", "content": "unreleased-track" }
+      ]
+
+    },
+  };
+
+  /*
+  const payload = {
+    key: API_KEY,
+    template_name: "test-mc-edit",
+    template_content: [
+      {
+        name: "main_content",
+        content: "<h1 style='color: #00cfff;'>it worked 🌀</h1><p>This is a test injection with styling</p>"
+      }
+    ],
+    message: {
+      subject: "🧪 Visual Test Injection",
+      from_email: "graz@dgenr8.world",
+      from_name: "soundbath.",
+      to: [
+        {
+          email: to,
+          type: "to"
+        }
+      ],
+      important: true,
       track_opens: true,
       track_clicks: true,
       auto_text: true,
-      auto_html: true,
-      tags: [rewardSlug],
-    },
-  };
+      inline_css: true
+    }
+  };*/
 
   console.log("📤 Preparing to send Mailchimp transactional email...");
   console.log("➡️ Payload:", JSON.stringify(payload, null, 2));
