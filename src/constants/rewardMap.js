@@ -1,5 +1,4 @@
 export const rewardMap = {
-  /*
   "free sticker with purchase!": {
     redirect: "/shop",
     message: "redirecting you to the shop...",
@@ -11,6 +10,7 @@ export const rewardMap = {
     isEmailReward: false,
     // no redirect
   },
+  /*
   "glitch reading": {
     redirect: "/glitch-reading",
     message: "redirecting you to your glitch reading...",
@@ -38,20 +38,51 @@ export const rewardMessages = {
     subject: "Here's your exclusive track 🎶",
     text: `Hey! Thanks for spinning the DGENR8 reward wheel. Your exclusive track is here:\n\n🎧 [LINK TO TRACK]\n\nEnjoy, and keep creating!`,
     html: `
-      <div style="font-family: Helvetica, Arial, sans-serif; background: #f9f9f9; color: #0f0f0f; padding: 20px; text-align: center;">
-        <style>
-          @media (prefers-color-scheme: dark) {
-            body, div { background: #0f0f0f !important; color: #f9f9f9 !important; }
-            a { background: white !important; color: black !important; }
-          }
-        </style>
-        <h1 style="font-size: 28px; margin-bottom: 10px;">your track is ready 🎶</h1>
-        <p style="font-size: 16px;">thanks for spinning the <strong>dgenr8</strong> reward wheel.</p>
-        <p style="font-size: 18px; margin: 20px 0;">
-          <a href="[LINK TO TRACK]" style="background: black; color: white; padding: 12px 20px; text-decoration: none; border-radius: 8px;">🎧 listen now</a>
-        </p>
-        <p style="font-size: 14px;">keep glitching,<br>dgenr8. & soundbath.</p>
-      </div>
+      <html>
+      <head>
+      <meta charset="UTF-8"/>
+      <title>Unreleased Track Reward</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #000000; color: #00cfff; font-family: Helvetica, sans-serif;">
+      <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #000000;">
+        <tr>
+          <td align="center" valign="middle" style="padding: 2rem;">
+            <table cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: auto; text-align: center;">
+              <tr>
+
+                    <td style="padding-bottom: 2rem;">
+                      <h1 style="font-size: 24px; text-shadow: 0 0 10px #00cfff; margin-bottom: 1.5rem;">
+                        you’ve unlocked an unreleased track! 🎶
+                      </h1>
+
+                      <p style="font-size: 16px; margin-bottom: 2rem;">
+                        click the button below to download your reward:
+                      </p>
+
+                      <a href="https://res.cloudinary.com/dtg5hfwbs/video/upload/fuck2_al1ajg.mp3" style="display: inline-block; padding: 0.75rem 2rem; border: 1px solid #00cfff;
+                                color: #00cfff; text-decoration: none; border-radius: 6px;
+                                font-size: 16px; text-shadow: 0 0 6px #00cfff;">
+                        🎁 download unreleased track →
+                      </a>
+
+                      <p style="font-size: 14px; margin-top: 2rem; color: #00cfff; text-shadow: 0 0 10px #00cfff;">
+                        thank you for supporting.
+                      </p>
+
+                      <img src="https://res.cloudinary.com/dtg5hfwbs/image/upload/v1751644062/soundbath_opo25h.png" alt="soundbath." width="100" style="margin: 2rem auto 1rem auto; display: block;"/>
+
+                      <p style="font-size: 12px; opacity: 0.6; margin-top: 1rem;">
+                        follow us on socials for more surprises ✨
+                      </p>
+                    </td>
+
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      </body>
+      </html>
     `,
   },
 

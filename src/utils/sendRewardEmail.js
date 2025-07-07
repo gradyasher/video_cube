@@ -1,68 +1,26 @@
 // utils/sendRewardEmail.js
-export async function sendRewardEmail({ to, subject, text, html, rewardSlug = "general" }) {
-  const API_KEY = process.env.MAILCHIMP_TRANSACTIONAL_API_KEY_2;
 
+export async function sendRewardEmail({ to, subject, text, html }) {
+  const API_KEY = process.env.MAILCHIMP_TRANSACTIONAL_API_KEY_2;
 
   const payload = {
     key: API_KEY,
-    template_name: "unreleased-track-reward-2",
-    template_content: [
-      {
-        name: "main_content",
-        content: "<p style='color: red;'>🔥 THIS IS A TEST 🔥</p>",
-      }
-    ],
     message: {
       to: [{ email: to, type: "to" }],
       from_email: "graz@dgenr8.world",
       from_name: "dgenr8. & soundbath.",
       subject,
-      merge_vars: [
-        {
-          rcpt: to,
-          vars: [
-            { name: "email", content: to },
-            { name: "reward_slug", content: rewardSlug },
-          ],
-        },
-      ],
-      global_merge_vars: [
-        { "name": "email", "content": to },
-        { "name": "reward_slug", "content": "unreleased-track" }
-      ]
-
+      text,
+      html,
+      auto_text: true,
+      track_opens: true,
+      track_clicks: true,
+      inline_css: true,
+      important: true,
     },
   };
 
-  /*
-  const payload = {
-    key: API_KEY,
-    template_name: "test-mc-edit",
-    template_content: [
-      {
-        name: "main_content",
-        content: "<h1 style='color: #00cfff;'>it worked 🌀</h1><p>This is a test injection with styling</p>"
-      }
-    ],
-    message: {
-      subject: "🧪 Visual Test Injection",
-      from_email: "graz@dgenr8.world",
-      from_name: "soundbath.",
-      to: [
-        {
-          email: to,
-          type: "to"
-        }
-      ],
-      important: true,
-      track_opens: true,
-      track_clicks: true,
-      auto_text: true,
-      inline_css: true
-    }
-  };*/
-
-  console.log("📤 Preparing to send Mailchimp transactional email...");
+  console.log("📤 Preparing to send custom Mailchimp transactional email...");
   console.log("➡️ Payload:", JSON.stringify(payload, null, 2));
 
   try {
