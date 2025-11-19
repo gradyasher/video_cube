@@ -11,6 +11,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { generateQRCode } from "./src/utils/generateQRCode.js";
 import subscribeHandler from "./api/subscribe.js";
+import signalHandler from "./api/signal.js";
 import { triggerMailchimpJourney } from "./api/mailchimp.js";
 import generateDiscount from "./api/generate-discount.js";
 import { generateNewCartId } from "./src/utils/shopifyUtils.server.js";
@@ -76,6 +77,7 @@ setInterval(() => {
 }, 15 * 60 * 1000);*/
 
 app.post("/api/subscribe", subscribeHandler);
+app.post("/api/signal", signalHandler);
 
 
 app.get("/api/ping", (req, res) => {

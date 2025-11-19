@@ -1,4 +1,5 @@
 // src/api/subscribe.js
+import crypto from "crypto";
 import { sendRewardEmail } from "../src/utils/sendRewardEmail.js"
 import { rewardMessages } from "../src/constants/rewardMap.js"
 
@@ -11,7 +12,7 @@ export default async function subscribeHandler(req, res) {
     return res.status(405).json({ error: "method not allowed" });
   }
 
-  const { email, reward, cartId } = req.body;
+  const { email, reward, cartId, source } = req.body;
 
   const forceSend = process.env.FORCE_EMAIL_SEND === "true";
 
@@ -89,8 +90,8 @@ export default async function subscribeHandler(req, res) {
   const API_KEY = process.env.MAILCHIMP_API_KEY;
   const AUDIENCE_ID = "e119572dab";
   const DATACENTER = API_KEY.split("-")[1];
-
-  const url = `https://${DATACENTER}.api.mailchimp.com/3.0/lists/${AUDIENCE_ID}/members`;
+  const memberHash = crypto.createHash("md5").update(email.toLowerCase()).digest("hex");
+  const url = `https://${DATACENTER}.api.mailchimp.com/3.0/lists/${AUDIENCE_ID}/members/${memberHash}`;
 
   // 🛡️ Rate-limit via cookie
   const cookie = req.headers.cookie || "";
@@ -106,12 +107,15 @@ export default async function subscribeHandler(req, res) {
   const data = {
     email_address: email,
     status: "subscribed",
+    merge_fields: {
+      SOURCE: source || "mystery-reward",
+    },
   };
 
   try {
     // send to mailchimp
     const response = await fetch(url, {
-      method: "POST",
+      method: "PUT",
       headers: {
         Authorization: `apikey ${API_KEY}`,
         "Content-Type": "application/json",
@@ -132,7 +136,7 @@ export default async function subscribeHandler(req, res) {
       });
     }
 
-    if (!rewardMessages[reward] && rewardMap[reward]?.isEmailReward) {
+    if (!rewardMessages[reward]) {
       console.warn(`⚠️ isEmailReward true but no email content defined for: ${reward}`);
     }
 
@@ -145,18 +149,34 @@ export default async function subscribeHandler(req, res) {
         `claimedMysteryReward=true; Path=/; Max-Age=${60 * 60 * 24}; HttpOnly`
       );
 
-      const rewardInfo = rewardMessages[reward];
-      if (rewardInfo) {
-        console.log(`📤 Sending reward email for: ${reward}`);
+      const factories = rewardMessages[reward];
+      if (factories) {
+        // Choose which env to use; prefer a burn.link if you’re doing self-destruct
+        const trackUrl =
+          process.env.UNRELEASED_TRACK_BURNLINK ||
+          process.env.UNRELEASED_TRACK_URL;
 
-        // 🔁 Swap this for actual email provider logic (Resend, Postmark, etc.)
-        const rewardSlug = reward.toLowerCase().replace(/\s+/g, '-');
+        const zineUrl = process.env.ZINE_URL;
+        const streamLink = process.env.PRIVATE_STREAM_LINK;
+
+        // Build the message using the appropriate param
+        const rewardInfo =
+          reward === "unreleased track"
+            ? factories({ trackUrl })
+            : reward === "glitch zine pdf"
+            ? factories({ zineUrl })
+            : reward === "private livestream access"
+            ? factories({ streamLink })
+            : factories({}); // default/no params
+
         await sendRewardEmail({
           to: email,
           subject: rewardInfo.subject,
           text: rewardInfo.text,
           html: rewardInfo.html,
-          rewardSlug
+          // optional: tags/metadata if you added them
+          // tags: ["reward", "unreleased-track"],
+          // metadata: { rewardSlug: reward.toLowerCase().replace(/\s+/g,'-') },
         });
       }
       return res.status(200).json({ message: "Subscribed successfully!" });

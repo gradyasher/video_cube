@@ -111,6 +111,7 @@ export default function App() {
            <Route path="/discord" element={<DiscordPage />} />
            <Route path="/about" element={<AboutPage />} />
            <Route path="/email" element={<EmailPage />} />
+           <Route path="/email/:variant" element={<EmailPage />} />
          </Route>
 
          <Route path="/adventure" element={<AdventurePage />} />

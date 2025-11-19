@@ -1,13 +1,20 @@
+// src/pages/EmailPage.jsx
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import "../styles/EmailPage.css";
 
 export default function EmailPage() {
-  const [sent, setSent] = useState(false);
+  const { variant } = useParams();
+  const isLeadMagnet = Boolean(variant);
+
   const [visible, setVisible] = useState(false);
+  const [status, setStatus] = useState("idle");
+
   const [formData, setFormData] = useState({
     email: "",
+    firstName: "",
     message: "",
-    fax: "", // honeypot
+    fax: "",
   });
 
   useEffect(() => {
@@ -29,18 +36,28 @@ export default function EmailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
+          firstName: formData.firstName,
           message: formData.message,
           fax: formData.fax,
+          variant,
+          source: variant ? `lead-magnet-${variant}` : "signal-form",
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        setSent(true);
+        if (data.message === "Already subscribed") {
+          setStatus("already");
+        } else {
+          setStatus("subscribed");
+        }
       } else {
-        const data = await res.json();
+        setStatus("error");
         alert(`Error: ${data.message || "Failed to send signal"}`);
       }
     } catch (err) {
+      setStatus("error");
       alert("Something glitched. Try again later.");
       console.error(err);
     }
@@ -49,18 +66,86 @@ export default function EmailPage() {
   return (
     <div className="signal-container">
       <div className={`signal-overlay fade-start ${visible ? "fade-in" : ""}`}>
-        <h1 className="signal-title">join the email list for fun stuff. 📡</h1>
 
-        {sent ? (
-          <p className="confirmation">email received! <br /> thank u.</p>
-        ) : (
+        {/* Heading + subtext */}
+        {status === "idle" && (
+          <>
+            <h1 className="signal-title">
+              {isLeadMagnet
+                ? "enter your email to get this unreleased track"
+                : "join the email list for fun stuff. 📡"}
+            </h1>
+
+            {isLeadMagnet && (
+              <p className="signal-subtext">
+                you’ll get the track + occasional updates. unsubscribe anytime.
+              </p>
+            )}
+          </>
+        )}
+
+        {/* Success: first-time */}
+        {status === "subscribed" && (
+          <p className="confirmation">
+            email received! <br /> thank u.
+            {isLeadMagnet && (
+              <>
+                <br /><br />
+                we'll send you your track today ☺️
+              </>
+            )}
+            <br /><br />
+            <a href="/" style={{ color: "#0ff", textDecoration: "underline" }}>
+              ← home
+            </a>
+          </p>
+        )}
+
+        {/* Success: already subscribed */}
+        {status === "already" && (
+          <p className="confirmation">
+            you're already on the list! <br />
+            {isLeadMagnet && (
+              <>
+                we'll send you your track today ☺️
+              </>
+            )}
+            <br /><br />
+            <a href="/" style={{ color: "#0ff", textDecoration: "underline" }}>
+              ← home
+            </a>
+          </p>
+        )}
+
+        {/* Error state */}
+        {status === "error" && (
+          <p className="confirmation">
+            something glitched. try again later.
+            <br /><br />
+            <a href="/" style={{ color: "#0ff", textDecoration: "underline" }}>
+              ← home
+            </a>
+          </p>
+        )}
+
+        {/* Form */}
+        {status === "idle" && (
           <form className="signal-form" onSubmit={handleSubmit}>
             <input
               type="email"
               name="email"
-              placeholder="your email"
+              placeholder={
+                isLeadMagnet ? "your email to unlock the track" : "your email"
+              }
               required
               value={formData.email}
+              onChange={handleChange}
+            />
+            <input
+              type="text"
+              name="firstName"
+              placeholder="your first name (optional)"
+              value={formData.firstName}
               onChange={handleChange}
             />
             <input
@@ -72,16 +157,21 @@ export default function EmailPage() {
               tabIndex={-1}
               autoComplete="off"
             />
-            <textarea
-              name="message"
-              placeholder="optional message..."
-              rows={4}
-              value={formData.message}
-              onChange={handleChange}
-            />
-            <button type="submit">submit</button>
+            {!isLeadMagnet && (
+              <textarea
+                name="message"
+                placeholder="optional message..."
+                rows={4}
+                value={formData.message}
+                onChange={handleChange}
+              />
+            )}
+            <button type="submit">
+              {isLeadMagnet ? "get the track" : "submit"}
+            </button>
           </form>
         )}
+
       </div>
     </div>
   );

@@ -3,6 +3,17 @@
 export async function sendRewardEmail({ to, subject, text, html }) {
   const API_KEY = process.env.MAILCHIMP_TRANSACTIONAL_API_KEY_2;
 
+  if (!API_KEY) {
+    const err = new Error("Missing MAILCHIMP_TRANSACTIONAL_API_KEY_2");
+    console.error("❌", err.message);
+    throw err;
+  }
+  if (!to || !subject || (!text && !html)) {
+    const err = new Error("Missing required fields: to, subject, and text or html");
+    console.error("❌", err.message);
+    throw err;
+  }
+
   const payload = {
     key: API_KEY,
     message: {
@@ -20,8 +31,13 @@ export async function sendRewardEmail({ to, subject, text, html }) {
     },
   };
 
-  console.log("📤 Preparing to send custom Mailchimp transactional email...");
-  console.log("➡️ Payload:", JSON.stringify(payload, null, 2));
+  // Log safely without leaking PII/HTML
+  console.log("📤 Sending transactional email:", {
+    to,
+    subject,
+    hasHtml: Boolean(html),
+    hasText: Boolean(text),
+  });
 
   try {
     const response = await fetch("https://mandrillapp.com/api/1.0/messages/send.json", {
@@ -33,14 +49,22 @@ export async function sendRewardEmail({ to, subject, text, html }) {
     });
 
     const data = await response.json();
-
-    console.log("📬 Mailchimp response:", data);
-
-    if (Array.isArray(data) && data[0]?.status === "sent") {
-      console.log(`✅ Email sent successfully to ${to}`);
+    // Mandrill success is an ARRAY; errors are often an OBJECT
+    if (Array.isArray(data) && data[0]) {
+      const status = data[0].status; // "sent" | "queued" | "rejected" | "invalid"
+      if (status === "sent" || status === "queued") {
+        console.log(`✅ Email ${status} to ${to}`);
+        return data; // ← return provider response
+      }
+      console.error("❌ Mandrill send failed:", data);
+      throw new Error(data[0]?.reject_reason || "Mandrill send failed");
+    } else if (data && typeof data === "object") {
+      // Typical error object shape
+      console.error("❌ Mandrill error:", data);
+      throw new Error(`${data.name || "MandrillError"}: ${data.message || "Unknown error"}`);
     } else {
-      console.error("❌ Mailchimp Transactional send failed:", data);
-      throw new Error(data[0]?.reject_reason || "Unknown send failure");
+      console.error("❌ Unexpected Mandrill response:", data);
+      throw new Error("Unexpected Mandrill response");
     }
   } catch (err) {
     console.error("💥 Error while sending email:", err);

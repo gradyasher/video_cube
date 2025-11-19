@@ -43,6 +43,21 @@
   gap: 1rem;
 }
 
+.signal-overlay .signal-title {
+  margin-bottom: 0.2rem;   /* pull subheading up */
+}
+
+/* subheading right under title, not hugging the form */
+.signal-overlay .signal-subtext {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 0;           /* sit tight to the title */
+  margin-bottom: 1.1rem;   /* buffer before the form */
+  line-height: 1.4;
+  text-align: center;
+}
+
+
 .signal-form input,
 .signal-form textarea {
   padding: 1rem;

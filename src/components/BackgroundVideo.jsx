@@ -1,67 +1,103 @@
+// BackgroundVideo.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { VideoTexture, LinearFilter, RGBFormat } from "three";
+import { VideoTexture, LinearFilter, RGBFormat, SRGBColorSpace } from "three";
 import { backgroundShader } from "../shaders/backgroundShader";
 import { bgVids } from "../constants/videoSources";
 
 export default function BackgroundVideo({ onReady, videoUrl, scale = 1 }) {
-  const meshRef = useRef();
   const materialRef = useRef();
   const videoRef = useRef(null);
+  const rVFCId = useRef(null);
   const [videoTexture, setVideoTexture] = useState(null);
 
-  const selectedSrc = useMemo(() => {
-    if (videoUrl) return videoUrl;
-    const randomIndex = Math.floor(Math.random() * bgVids.length);
-    return bgVids[randomIndex];
-  }, [videoUrl]);
+  const selectedSrc = useMemo(
+    () => videoUrl || bgVids[Math.floor(Math.random() * bgVids.length)],
+    [videoUrl]
+  );
 
   useEffect(() => {
     const video = document.createElement("video");
-    video.src = selectedSrc;
-    video.crossOrigin = "anonymous";
-    video.loop = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.setAttribute("webkit-playsinline", "true");
-    video.setAttribute("playsinline", "true");
 
+    // Policies BEFORE src
+    video.muted = true;              video.setAttribute("muted", "");
+    video.playsInline = true;        video.setAttribute("playsinline", "");
+    video.autoplay = true;
+    video.loop = true;
+    video.preload = "auto";
+
+    video.src = selectedSrc;
     videoRef.current = video;
 
-    video.addEventListener("canplay", () => {
+    const onLoaded = () => {
       const tex = new VideoTexture(video);
       tex.minFilter = LinearFilter;
       tex.magFilter = LinearFilter;
       tex.format = RGBFormat;
+      if ("colorSpace" in tex) tex.colorSpace = SRGBColorSpace;
       tex.needsUpdate = true;
-      setVideoTexture(tex);
-      onReady?.();
-      video.play().catch((e) => console.warn("Autoplay failed", e));
-    });
 
+      setVideoTexture(tex);
+      onReady?.(); // proceed as soon as the first frame is ready
+
+      // Drive updates from the video’s own frame cadence
+      const pump = () => {
+        tex.needsUpdate = true;
+        rVFCId.current = video.requestVideoFrameCallback?.(pump) ?? null;
+      };
+      video.requestVideoFrameCallback?.(pump);
+
+      // Kickstart playback (helps some WebKit builds)
+      try { video.currentTime = 0.001; } catch {}
+      const p = video.play();
+      if (p?.catch) p.catch(() => {/* ignore autoplay warnings in prod */});
+    };
+
+    const onError = () => {
+      // try one fallback file
+      const alt = bgVids.find((v) => v !== selectedSrc);
+      if (alt) { video.src = alt; video.load(); }
+    };
+
+    video.addEventListener("loadeddata", onLoaded, { once: true });
+    video.addEventListener("error", onError);
     video.load();
+
+    return () => {
+      if (rVFCId.current && video.cancelVideoFrameCallback) {
+        video.cancelVideoFrameCallback(rVFCId.current);
+      }
+      try { video.pause(); } catch {}
+      video.src = "";
+    };
   }, [selectedSrc, onReady]);
 
-  useFrame(() => {
-    if (videoTexture && videoRef.current?.readyState >= 2) {
-      videoTexture.needsUpdate = true;
+  // Rebind texture to shader once created (in case material was constructed first)
+  useEffect(() => {
+    if (!materialRef.current || !videoTexture) return;
+    const u = materialRef.current.uniforms;
+    if (u?.map) {
+      u.map.value = videoTexture;
+      materialRef.current.needsUpdate = true;
     }
+  }, [videoTexture]);
+
+  // Fallback tick so frames advance even without rVFC
+  useFrame(() => {
+    if (videoTexture) videoTexture.needsUpdate = true;
   });
 
   if (!videoTexture) return null;
 
-  const width = 100 * scale;
-  const height = 30 * scale;
-
   return (
-    <mesh ref={meshRef} position={[0, 0, -5]} renderOrder={-1}>
-      <planeGeometry args={[width, height]} />
+    <mesh position={[0, 0, -5]} renderOrder={-1}>
+      <planeGeometry args={[100 * scale, 30 * scale]} />
       <shaderMaterial
         ref={materialRef}
         vertexShader={backgroundShader.vertexShader}
         fragmentShader={backgroundShader.fragmentShader}
         uniforms={{
-          map: { value: videoTexture },
+          map: { value: videoTexture },   // make sure your shader uses `uniform sampler2D map;`
           warpAmount: { value: 1.5 },
         }}
         transparent={false}

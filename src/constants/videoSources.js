@@ -32,7 +32,7 @@ export const hostedVideoLinks = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1743440347/weva45gilksokv3fsge3.mp4",
 ];
 
-
+/*
 export const bgVids = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1750284662/bg_1_m3coio.mp4",
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1750284672/bg_2_qiw1hk.mp4",
@@ -42,7 +42,18 @@ export const bgVids = [
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1750284676/bg_8_llp6bd.mp4",
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1750284693/bg_9_jqabti.mp4",
   "https://res.cloudinary.com/dtg5hfwbs/video/upload/q_auto,f_auto,w_720/v1750284709/bg_10_zda2w8.mp4"
+];*/
+export const bgVids = [
+  "/videos/bg_vids/bg_1.mp4",
+  "/videos/bg_vids/bg_2.mp4",
+  "/videos/bg_vids/bg_4.mp4",
+  "/videos/bg_vids/bg_6.mp4",
+  "/videos/bg_vids/bg_7.mp4",
+  "/videos/bg_vids/bg_8.mp4",
+  "/videos/bg_vids/bg_9.mp4",
+  "/videos/bg_vids/bg_10.mp4",
 ];
+
 
 
 export const adventureVids = [
