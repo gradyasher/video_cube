@@ -4,6 +4,18 @@ const ipCache = new Map();
 const recentEmails = new Map();
 const isProd = process.env.NODE_ENV === "production";
 
+function getClientIp(req) {
+  const xff = req.headers["x-forwarded-for"];
+  if (typeof xff === "string" && xff.length > 0) {
+    // "client, proxy1, proxy2" → take first
+    return xff.split(",")[0].trim();
+  }
+
+  if (req.ip) return req.ip;
+  if (req.socket?.remoteAddress) return req.socket.remoteAddress;
+  return "unknown-ip";
+}
+
 export default async function signalHandler(req, res) {
 
 
@@ -23,12 +35,9 @@ export default async function signalHandler(req, res) {
     return res.status(400).json({ error: "Missing email" });
   }
 
-  // 🔒 IP Rate Limit
-  const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown-ip";
-
-  // 🔒 IP Rate Limit (production only so dev isn't annoying
+  // 🔒 IP Rate Limit (production only so dev isn't annoying)
   if (isProd) {
-    const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown-ip";
+    const ip = getClientIp(req);
 
     if (ipCache.has(ip)) {
       return res
@@ -36,10 +45,14 @@ export default async function signalHandler(req, res) {
         .json({ message: "Too many signals from this IP. Try again later." });
     }
 
-    ipCache.set(ip, true);
-    // 10-minute window in prod (tune if you want)
-    setTimeout(() => ipCache.delete(ip), 10 * 60 * 1000);
+    // allow this request and set a 10-minute lockout
+    const timeoutId = setTimeout(() => {
+      ipCache.delete(ip);
+    }, 10 * 60 * 1000);
+
+    ipCache.set(ip, timeoutId);
   }
+
 
 
   // 📨 Email Rate Limit

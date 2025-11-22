@@ -27,12 +27,18 @@ const MAX_AGE_MINUTES = 10;
 const ipClaims = new Map();
 const MAX_CLAIMS_PER_HOUR = 3;
 
+app.set('trust proxy', true);
+
 dotenv.config();
+
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/generate-discount", generateDiscount);
+
+
+
 
 function isRateLimited(ip) {
   const now = Date.now();
